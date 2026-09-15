@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  /* Two-colour semantic rule: ink blue is always observed data, amber is
+     always generated data, and neither is ever used decoratively. Deep red
+     means one thing only: a bank has defaulted. */
+  --color-ink: #10192b;
+  --color-paper: #f5f6f4;
+  --color-observed: #2e5e8c;
+  --color-generated: #c8842a;
+  --color-stress: #a3302b;
+  --color-rule: #d6d8d3;
+
+  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-body: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Figures in tables and on axes only, never labels or headings. */
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* The page's only non-interactive motion: edges draw themselves in once, on
+   load, observed before generated, and then it stops. */
+@keyframes edge-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge {
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  animation: edge-draw 420ms ease-out var(--delay, 0ms) forwards;
+}
+
+.node-reveal {
+  opacity: 0;
+  animation: node-appear 260ms ease-out var(--delay, 0ms) forwards;
+}
+
+@keyframes node-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge,
+  .node-reveal {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

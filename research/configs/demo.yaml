@@ -1,0 +1,53 @@
+# Single source of truth for the demo pipeline. Everything downstream is seeded
+# from here, so two runs of scripts/run_demo.py produce byte-identical JSON.
+
+seed: 20260915
+
+network:
+  n_nodes: 60
+  core_fraction: 0.10        # 6 of 60 banks form the core
+  p_core_core: 0.85          # core lends to core almost always
+  p_core_periphery: 0.35     # core lends out to the periphery
+  p_periphery_core: 0.30     # periphery lends back into the core
+  p_periphery_periphery: 0.02  # periphery rarely faces periphery directly
+  weight_mu: -3.4            # lognormal mu for a periphery-periphery exposure
+  weight_sigma: 0.65         # lognormal sigma, shared by all edge classes
+  core_weight_scale: 3.0     # core exposures are this many times larger
+  assets_mu: 0.0             # lognormal mu for bank total assets
+  assets_sigma: 0.5
+  core_assets_scale: 4.0     # core banks are bigger
+  interbank_share: 0.12      # interbank claims as a share of system total assets
+  equity_ratio: 0.08         # equity ~ 8% of assets ...
+  equity_noise_sigma: 0.20   # ... with lognormal noise around that
+
+corpus:
+  n_train: 300               # training graphs sampled from the generator above
+
+gvae:
+  latent_dim: 16
+  hidden_dim: 32
+  epochs: 300
+  lr: 0.01
+  log_every: 10
+  pos_weight: 4.0            # up-weights the sparse positive class in edge BCE
+  weight_loss_scale: 10.0    # MSE on edge weights is small; lift it into range
+  kl_scale: 0.05             # beta on the KL term
+  latent_bandwidth: 0.40     # kernel width for sampling fresh node latents
+  edge_threshold: null       # null => pick the threshold that matches observed density
+  sample_seed: 7
+
+contagion:
+  shock_min: 0.05
+  shock_max: 0.50
+  shock_steps: 10
+  repeats: 20
+  debtrank_shock: 0.50       # size of the initial hit when seeding one bank
+
+layout:
+  seed: 42
+  spring_iterations: 120
+
+export:
+  out_dir: ../web/public/data
+  degree_bins: 20
+  weight_bins: 12

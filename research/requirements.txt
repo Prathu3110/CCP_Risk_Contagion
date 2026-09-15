@@ -1,0 +1,11 @@
+# Pinned to the versions this demo was developed and verified against.
+# Install into a virtualenv when you want isolation:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r research/requirements.txt
+numpy==2.2.5
+torch==2.9.0
+networkx==3.5
+PyYAML==6.0.3
+scipy==1.16.2
+# Only needed by scripts/make_figure.py; the pipeline itself does not import it.
+matplotlib==3.11.2
