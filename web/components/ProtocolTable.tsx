@@ -1,3 +1,4 @@
+import SeriesName from "@/components/SeriesName";
 import type { Evaluation, MethodKey } from "@/lib/types";
 
 const percent = (value: number) => `${Math.round(value * 100)}%`;
@@ -51,8 +52,8 @@ export default function ProtocolTable({
             const passes = entry.ks_debtrank.share_not_rejected_at_005;
             return (
               <tr key={key} className="border-b border-rule/60 align-top">
-                <td className="py-2 pr-4" style={{ color: colours[key] }}>
-                  {entry.label}
+                <td className="py-2 pr-4">
+                  <SeriesName label={entry.label} colour={colours[key]} />
                 </td>
                 <td className="py-2 px-4 text-right tabular">
                   {percent(entry.edge_recall.mean)}

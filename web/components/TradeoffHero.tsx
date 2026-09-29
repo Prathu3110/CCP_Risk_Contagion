@@ -5,6 +5,7 @@ import type { KeyboardEvent } from "react";
 import { scaleLinear } from "d3-scale";
 
 import NetworkPlot, { RESTING_EDGE } from "@/components/NetworkPlot";
+import SeriesName from "@/components/SeriesName";
 import { methodColours } from "@/lib/methods";
 import type { Evaluation, MethodKey, Networks } from "@/lib/types";
 
@@ -84,7 +85,12 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
   return (
     <div className="grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div>
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto">
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="w-full h-auto"
+          role="group"
+          aria-label="Links recovered against crisis-behaviour error, one point per method"
+        >
           <g>
             {y.ticks(5).map((tick) => (
               <line
@@ -147,6 +153,8 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
                   {active && (
                     <circle cx={cx} cy={cy} r={11} fill="none" stroke="var(--color-ink)" strokeWidth={1} />
                   )}
+                  {/* Invisible hit area: the drawn point is 14px across, well
+                      under a comfortable touch target. */}
                   <circle
                     ref={(element) => {
                       if (element) pointRefs.current.set(key, element);
@@ -158,15 +166,16 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
                     tabIndex={active ? 0 : -1}
                     cx={cx}
                     cy={cy}
-                    r={7}
-                    fill={colours[key]}
+                    r={16}
+                    fill="transparent"
                     className="cursor-pointer"
                     onMouseEnter={() => setSelected(key)}
                     onFocus={() => setSelected(key)}
                     onClick={() => setSelected(key)}
                   />
+                  <circle cx={cx} cy={cy} r={7} fill={colours[key]} pointerEvents="none" />
                   <text
-                    x={cx + (entry.edge_recall.mean > 0.75 ? -14 : 14)}
+                    x={cx + (entry.edge_recall.mean > 0.75 ? -20 : 20)}
                     y={cy + 4}
                     fontSize={12.5}
                     fill="var(--color-ink)"
@@ -190,7 +199,7 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
       </div>
 
       <div>
-        <div className="grid grid-cols-2 gap-x-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
           {[observedKey, selected].map((key, index) => {
             const graph = networks.methods[key];
             return (
@@ -204,8 +213,8 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
                   hoveredSlot={hoveredSlot}
                   onHoverSlot={setHoveredSlot}
                 />
-                <figcaption className="mt-3 text-sm" style={{ color: colours[key] }}>
-                  {graph.label}
+                <figcaption className="mt-3 text-sm">
+                  <SeriesName label={graph.label} colour={colours[key]} />
                 </figcaption>
               </figure>
             );

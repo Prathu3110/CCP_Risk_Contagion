@@ -23,6 +23,9 @@ export default function AblationTable({ ablations }: { ablations: Ablations }) {
             </th>
             <th scope="col" className="py-2 px-4 font-medium text-right">
               Change
+              <span className="block font-normal text-ink/55">
+                positive = the choice earns its place
+              </span>
             </th>
             <th scope="col" className="py-2 pl-4 font-medium text-right">
               Spread of debt sizes

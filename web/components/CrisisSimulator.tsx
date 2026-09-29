@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import NetworkPlot from "@/components/NetworkPlot";
+import SeriesName from "@/components/SeriesName";
 import {
   analyse,
   compare,
@@ -186,7 +187,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
                     className="border px-3 py-1 text-sm"
                     style={{
                       borderColor: active ? colours[method.key] : "var(--color-rule)",
-                      color: active ? colours[method.key] : "var(--color-ink)",
+                      color: "var(--color-ink)",
+                      borderWidth: active ? 2 : 1,
                     }}
                   >
                     {method.label}
@@ -244,8 +246,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
                 selected={selected}
                 onSelect={toggleSelected}
               />
-              <figcaption className="mt-3" style={{ color: colours[key] }}>
-                {graph.label}
+              <figcaption className="mt-3">
+                <SeriesName label={graph.label} colour={colours[key]} />
                 <span className="tabular text-stress ml-3">
                   {state.failed.size} of {total} failed
                 </span>
@@ -276,9 +278,10 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
                   )}
                   {entry.generated && (
                     <span className="block text-sm">
-                      <span style={{ color: colours[comparison] }}>
-                        {networks.methods[comparison].label}.
-                      </span>{" "}
+                      <SeriesName
+                        label={`${networks.methods[comparison].label}.`}
+                        colour={colours[comparison]}
+                      />{" "}
                       {entry.generated}
                     </span>
                   )}
@@ -296,7 +299,7 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
               )}
 
               <div>
-                <p className="text-sm" style={{ color: colours[truth] }}>In {networks.methods[truth].label.toLowerCase()}</p>
+                <p className="text-sm"><SeriesName label={`In ${networks.methods[truth].label.toLowerCase()}`} colour={colours[truth]} /></p>
                 {describeRun(analysis.observed, total).map((line) => (
                   <p key={line} className="mt-2 text-sm">
                     {line}
@@ -305,7 +308,7 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
               </div>
 
               <div>
-                <p className="text-sm" style={{ color: colours[comparison] }}>In {networks.methods[comparison].label.toLowerCase()}</p>
+                <p className="text-sm"><SeriesName label={`In ${networks.methods[comparison].label.toLowerCase()}`} colour={colours[comparison]} /></p>
                 {describeRun(analysis.generated, total).map((line) => (
                   <p key={line} className="mt-2 text-sm">
                     {line}

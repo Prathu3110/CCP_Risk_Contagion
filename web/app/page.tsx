@@ -130,6 +130,80 @@ export default function Page() {
 
       <section className="border-t border-rule py-12 lg:py-16">
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          How good is our model, honestly
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            Good on the measure that matters, and it has one clear weakness we have not
+            fixed.
+          </p>
+          <p>
+            Against the two methods that are genuine alternatives, it wins. Its crisis
+            behaviour is{" "}
+            <span className="tabular">{model.protocol_score.mean.toFixed(3)}</span> away
+            from the truth, against{" "}
+            <span className="tabular">{dense.protocol_score.mean.toFixed(3)}</span> for the
+            evenly spread method and{" "}
+            <span className="tabular">
+              {evaluation.methods.erdos_renyi.protocol_score.mean.toFixed(3)}
+            </span>{" "}
+            for random wiring. On the statistical test, its pattern of dangerous banks
+            could not be told apart from the real system&rsquo;s in{" "}
+            {Math.round(
+              model.ks_debtrank.share_not_rejected_at_005 * model.n_samples,
+            )}{" "}
+            of {model.n_samples} attempts. The evenly spread method failed that test every
+            single time, despite recovering every real link.
+          </p>
+          <p>
+            The weakness: it understates how dangerous the typical bank is, by about a
+            third. It does not produce quite enough very large single debts, and it is the
+            rare large debt that makes one bank able to sink another. We report this
+            rather than tuning it away. It is also the best argument for the test itself.
+            A model built specifically for crisis realism still misses one of the
+            measures, which is exactly what a test is supposed to catch.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Why one method beats ours, and why it does not count
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            The configuration model scores best of everything on the table, at{" "}
+            <span className="tabular">
+              {evaluation.methods.configuration.protocol_score.mean.toFixed(3)}
+            </span>
+            . It would be dishonest to leave it out, and misleading to leave it in without
+            explaining what it is.
+          </p>
+          <p>
+            It is not a way of building a banking system. It is a way of shuffling one you
+            already have. It is handed the real network, told exactly how many
+            counterparties each bank has and exactly what the full list of debt sizes is,
+            and then it deals those same debts out to different pairs. It is a reshuffle
+            of the answer.
+          </p>
+          <p>
+            So it cannot do the job. Ask it to produce a banking system when you have no
+            real one, which is the entire problem here, and it produces nothing: it has
+            nothing to shuffle. It sits on the table as a ceiling, showing roughly how well
+            anything could do while keeping the real degree structure. Our model gets
+            within {(
+              (evaluation.methods.vae.protocol_score.mean /
+                evaluation.methods.configuration.protocol_score.mean -
+                1) *
+              100
+            ).toFixed(0)}
+            % of that ceiling having been shown none of it.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
           How the networks are made
         </h2>
         <div className="mt-5 max-w-[62ch] space-y-4">
@@ -144,9 +218,89 @@ export default function Page() {
           </p>
           <p>
             The system everything is measured against is itself simulated, not real
-            supervisory data. It is built to reproduce the patterns that studies of real
-            interbank markets report, and it is called the simulated ground truth
-            throughout, never &ldquo;the real data&rdquo;.
+            supervisory data. It is called the simulated ground truth throughout, never
+            &ldquo;the real data&rdquo;.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          What &ldquo;simulated&rdquo; actually means here
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            No file of real bank data is used anywhere in this project. Every number
+            traces back to a single starting seed. It is worth being precise about what
+            that does and does not mean.
+          </p>
+          <p>
+            A recipe builds a banking system from scratch. Sixty banks. Six of them are
+            marked as core. Then, for every possible pair, a coin is flipped to decide
+            whether one owes the other anything, and the coin is weighted by who the two
+            banks are: core banks lend to each other almost always, a periphery bank
+            lends to another periphery bank about one time in fifty. Where a debt exists,
+            its size is drawn from a distribution that produces many small debts and a few
+            very large ones, with core banks involved in the larger. Each bank gets a
+            size, and capital worth about 8% of it.
+          </p>
+          <p>
+            Run that recipe three hundred times and you have the training set. The model
+            sees those three hundred systems and nothing else. Run it once more, keep that
+            one aside, and you have the system every method is scored against. The model
+            never sees it. That is what makes the comparison meaningful: the model is
+            being asked to invent a system like the ones it studied, and then judged
+            against one it has never encountered.
+          </p>
+          <p>
+            The recipe is not arbitrary. Its shape comes from what studies of real
+            interbank markets report: very low density, a small tightly connected core, a
+            long tail of small banks, and large banks connecting to small ones rather than
+            to each other. Our simulated system reproduces those. Whether its numbers sit
+            inside the published ranges is recorded separately and is still being checked
+            against sources by hand.
+          </p>
+          <p>
+            What simulation cannot do is guarantee that a real system would not surprise
+            us in some way the recipe never considered. That is the honest limit, and no
+            amount of sampling removes it.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Why not just use real data
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            The obvious objection. The answer is that the data does not exist in public in
+            the form this needs.
+          </p>
+          <p>
+            What is needed is a list of which bank owes which other bank how much.
+            Supervisors collect exactly that and do not release it, because publishing a
+            map of who is exposed to whom would itself be a financial stability risk. It
+            names institutions and their weak points.
+          </p>
+          <p>
+            The source people reach for first is the Bank for International Settlements,
+            and it is worth being clear about why that does not work. The BIS publishes
+            how much the banking system of one country is owed by the banking system of
+            another. Countries, not banks. There are no individual institutions in it, so
+            there is no network to extract. A paper claiming a sixty-bank network
+            calibrated to BIS figures would be making a false claim, and we do not make
+            it.
+          </p>
+          <p>
+            There is a real improvement available, and it is worth naming because it is
+            the next thing to do. The links between banks have to be invented. The
+            balance sheets do not: bank sizes and capital ratios are published. Pinning
+            those to real figures, while leaving the network generated, would change the
+            claim from &ldquo;we invented a banking system&rdquo; to &ldquo;we invented
+            the links between banks whose balance sheets match a real one&rdquo;. The
+            machinery for that is in place and switched off, waiting on figures with
+            citations attached.
           </p>
         </div>
       </section>
@@ -198,7 +352,54 @@ export default function Page() {
 
       <section className="border-t border-rule py-12 lg:py-16">
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
-          How crises spread through them
+          How a crisis actually spreads
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            A bank has things it owns and things it owes. The gap between them is its
+            capital, and capital is what absorbs losses. Here it is about 8% of what a
+            bank owns, which is roughly what regulators require. Lose less than that and
+            you survive. Lose more and you cannot pay everyone.
+          </p>
+          <p>
+            Most of what a bank owns is outside the banking system: loans to companies and
+            households, government bonds, property. The shock hits that. It is the
+            recession, the property crash, the sovereign losing its credit rating. This is
+            the thing that starts a crisis, and it has nothing to do with the network.
+          </p>
+          <p>
+            The network is what happens next. When a bank cannot pay, the banks it owed
+            money to do not receive what they expected. That is a loss, and it lands on
+            their capital, which was sized for ordinary times rather than for a
+            counterparty disappearing. If it is large enough, they cannot pay either, and
+            their creditors take the next loss.
+          </p>
+          <p>
+            Two questions follow, and the two stress tests answer one each. How much
+            damage can a single bank do by itself, before anyone actually fails? That is
+            what the first chart measures. And when everyone is hit at once, how many banks
+            end up unable to pay? That is the second.
+          </p>
+          <p>
+            The second is the one you can watch below, because it settles in rounds. Round
+            one is everyone the shock sank directly. Round two is everyone who was fine
+            until round one stopped paying them. Round three is everyone sunk by round two.
+            It keeps going until nobody new fails. Only round one is about the shock. Every
+            round after it is the network, and those are the failures no amount of reading
+            a single bank&rsquo;s accounts would have predicted.
+          </p>
+          <p>
+            One result is worth knowing before you start. Past roughly a 25% shock the
+            number of banks sunk directly stops growing. Their buffers are already gone, so
+            a bigger shock cannot sink them any harder. Every additional failure after that
+            point arrives through the network.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Measuring it, method by method
         </h2>
         <p className="mt-5 max-w-[62ch]">
           Two stress tests. The first asks how much damage each bank can do on its own. The
@@ -302,6 +503,43 @@ export default function Page() {
 
       <section className="border-t border-rule py-12 lg:py-16">
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          What this would change
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            Regulators already run stress tests. They hit banks with a bad scenario and
+            check who survives. What most of those tests cannot do well is the second part
+            of this page: the failures that arrive through the network rather than from the
+            shock. Doing that needs the map of who owes whom, and only the supervisor has
+            it.
+          </p>
+          <p>
+            So the method that gets used instead is the evenly spread reconstruction shown
+            here. Its appeal is that it needs only totals, which are published. Its problem
+            is visible in the picture it draws: everyone owes a little to everyone, nobody
+            is dangerously exposed to anybody, and a failure has nowhere to concentrate.
+            Our results say its picture of which banks are dangerous is distinguishable
+            from the truth on every attempt, and that recovering all the real links did not
+            save it.
+          </p>
+          <p>
+            Three things change if generated networks can be trusted. A researcher with no
+            supervisory access can develop and compare contagion methods on realistic
+            systems. A regulator can hand a realistic network to outside researchers
+            without disclosing anything about actual banks. And because the generator
+            produces as many systems as you want, a policy can be tested against a thousand
+            plausible banking systems instead of the single one that happens to exist,
+            which is the only way to find out whether a rule is robust or merely lucky.
+          </p>
+          <p>
+            None of that is worth anything if the generated networks fail in the wrong way.
+            That is why the test comes first and the generator second.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
           What this does not do yet
         </h2>
         <ul className="mt-5 max-w-[62ch] space-y-3 list-disc pl-5">
@@ -329,6 +567,48 @@ export default function Page() {
             Everything here is sixty banks. A national system is thousands.
           </li>
         </ul>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Where this sits in the research literature
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            This work sits at the meeting point of three bodies of research, and takes
+            something from each.
+          </p>
+          <p>
+            The first studied real interbank networks, using access researchers outside
+            central banks do not have. Those studies are where the shape of our simulated
+            system comes from: the small dense core, the sparse periphery, the fact that
+            large banks connect to small ones rather than to each other.
+          </p>
+          <p>
+            The second asked how to reconstruct a network you cannot see, from the totals
+            you can. That is where the evenly spread method comes from, and it has been
+            known for some time that it produces systems that look safer than reality. Our
+            contribution to that thread is to show how far the problem goes: the method
+            recovers every real link and is still rejected on every sample by the
+            behavioural test.
+          </p>
+          <p>
+            The third is machine learning on graphs, which is where the generator itself
+            comes from. Ours is a variational graph autoencoder with three additions the
+            contagion problem forced: a weight head, a balance-sheet head, and a per-bank
+            popularity term.
+          </p>
+          <p>
+            The claim we make is in none of those three. It is that the field is using the
+            wrong acceptance criterion, and that a behavioural one should replace it.
+          </p>
+          <p className="text-sm text-ink/70">
+            The full survey lives in <code>docs/related-work.md</code>. Every citation slot
+            in it is marked <code>TODO-VERIFY</code> and is being checked by hand against
+            publisher records. Nothing on this page cites a source we have not confirmed,
+            which is why no names appear above.
+          </p>
+        </div>
       </section>
 
       <footer className="border-t border-rule py-10 text-sm text-ink/60">

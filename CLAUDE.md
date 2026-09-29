@@ -44,6 +44,9 @@ web/
   components/            NetworkPlot, NetworkPair, CrisisSimulator, charts
   public/data/*.json     pipeline output, committed
 docs/method.md           the maths, equations and citations
+docs/data.md             what data is used, and why none of it is real
+docs/related-work.md     literature survey skeleton, all citations TODO-VERIFY
+docs/calibration.md      stylized facts, all published ranges TODO-VERIFY
 CCP-DEMO-BUILD-PLAN.md   the original brief this was built from
 ```
 
@@ -100,6 +103,18 @@ non-interactive motion is the one edge-draw reveal on load.
 **Charts are hand-rolled SVG** over `d3-scale` and `d3-shape`. Do not add a chart
 library.
 
+**Colour goes on marks, never on text.** Amber (2.85:1) and two of the three
+baseline greys (3.57:1, 2.40:1) fall below WCAG AA against paper. Darkening them
+would break the semantic palette, so a method's name is set in ink with a
+coloured swatch beside it — see `components/SeriesName.tsx`. Do not set a
+method's label in its own colour.
+
+**Accepted accessibility deviation.** Bank nodes inside a network drawing are
+11-23px, below the 24px target guidance. Sixty nodes cannot carry 44px targets
+in a panel that size without overlapping, so the mitigation is keyboard: every
+drawing is a roving-tabindex listbox with arrow-key navigation. The scatter
+points in the hero are 25px and were widened deliberately; keep them there.
+
 ## The two implementations that must agree
 
 `research/src/contagion.py` and `web/lib/contagion.ts` are the same two
@@ -124,8 +139,12 @@ the generated systems look artificially safe. Do not "simplify" them away.
    external liabilities.** Without both, single exposures ran to 10x a creditor's
    equity while no shock could ever cause a default.
 2. **The weight and node heads predict Gaussians and are sampled, not regressed
-   under MSE.** Squared error collapsed generated log-weight spread from 0.83 to
-   0.08 — every exposure the same size. Contagion depends on the tail.
+   under MSE.** Squared error collapses the generated log-weight spread — every
+   exposure comes out the same size, and contagion depends on the tail. Measured
+   in isolation against today's model (`run_ablations.py`) the effect is 0.739 to
+   0.363, against a ground truth of 0.825. The larger 0.83-to-0.08 figure quoted
+   during development predates the bias head, kernel latent sampling and
+   Bernoulli edges.
 3. **The node head models the equity *ratio*, not equity.** Its diagonal output
    cannot represent the size/capital correlation; modelling log-equity directly
    inflated mean equity by 24%.
@@ -192,7 +211,13 @@ be able to drift out of step with the model.
   build plan's 150-line guideline. Most of the overage is docstrings recording
   why each modelling choice was made; splitting them for a line count would cost
   more than it buys.
-- The observed system is itself simulated. Real supervisory data is not wired in.
+- The observed system is itself simulated. Real supervisory data is not wired in,
+  and cannot be: no bilateral bank-to-bank exposure data is published anywhere.
+  BIS statistics are country-and-sector aggregates and contain no bank-level
+  network — never claim calibration to them. `configs/demo.yaml` carries a
+  `calibration` block for pinning balance-sheet parameters to public figures; it
+  is `enabled: false` and every field is `TODO-VERIFY` until filled from a named
+  source. See `docs/data.md`.
 - No central counterparty and no default waterfall yet — the next milestone, and
   the part that matters most for clearing risk.
 - 60 banks only. The dense-adjacency approach will not reach national scale

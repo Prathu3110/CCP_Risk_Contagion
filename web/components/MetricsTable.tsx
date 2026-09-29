@@ -1,3 +1,4 @@
+import SeriesName from "@/components/SeriesName";
 import type { SummaryRow } from "@/lib/types";
 
 /** Figures are set in tabular mono so the columns of digits line up. */
@@ -6,18 +7,27 @@ export default function MetricsTable({ rows }: { rows: SummaryRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">
-          Network statistics for the observed and generated systems, with the gap between them
+          Network statistics for the simulated ground truth and our model, with the gap
+          between them
         </caption>
         <thead>
           <tr className="border-b border-rule">
             <th scope="col" className="py-2 pr-4 font-medium">
               Statistic
             </th>
-            <th scope="col" className="py-2 px-4 font-medium text-right text-observed">
-              Observed
+            <th scope="col" className="py-2 px-4 font-medium text-right">
+              <SeriesName
+                label="Ground truth"
+                colour="var(--color-observed)"
+                className="justify-end"
+              />
             </th>
-            <th scope="col" className="py-2 px-4 font-medium text-right text-generated">
-              Generated
+            <th scope="col" className="py-2 px-4 font-medium text-right">
+              <SeriesName
+                label="Our model"
+                colour="var(--color-generated)"
+                className="justify-end"
+              />
             </th>
             <th scope="col" className="py-2 pl-4 font-medium text-right">
               Gap

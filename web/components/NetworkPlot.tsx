@@ -147,6 +147,8 @@ export default function NetworkPlot({
     <svg
       viewBox={`0 0 ${VIEW} ${VIEW}`}
       className="w-full h-auto overflow-visible"
+      role="group"
+      aria-label={`Network drawing of the ${name}`}
       onMouseLeave={() => onHoverSlot(null)}
     >
       <g fill="none" strokeLinecap="round">

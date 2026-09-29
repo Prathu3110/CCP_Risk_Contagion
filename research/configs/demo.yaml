@@ -20,6 +20,26 @@ network:
   equity_ratio: 0.08         # equity ~ 8% of assets ...
   equity_noise_sigma: 0.20   # ... with lognormal noise around that
 
+# Where the balance-sheet parameters above should come from.
+#
+# The NETWORK is unavoidably synthetic: no bilateral bank-to-bank exposure data
+# is published anywhere. The BALANCE SHEETS need not be. Bank sizes, capital
+# ratios and interbank shares are reported in public supervisory disclosures,
+# so the parameters above can be pinned to real figures while the network stays
+# generated. That converts "we invented a banking system" into "we invented the
+# links between banks whose balance sheets match a real system".
+#
+# Every value here is TODO-VERIFY and is NOT used by the pipeline until filled
+# in by hand from a named source. Nothing is guessed. See docs/data.md.
+calibration:
+  enabled: false
+  source: TODO-VERIFY          # publication the figures below come from
+  as_of: TODO-VERIFY           # reporting date
+  equity_ratio_mean: TODO-VERIFY       # target for network.equity_ratio
+  equity_ratio_dispersion: TODO-VERIFY # target for network.equity_noise_sigma
+  interbank_share: TODO-VERIFY         # target for network.interbank_share
+  asset_size_dispersion: TODO-VERIFY   # target for network.assets_sigma
+
 corpus:
   n_train: 300               # training graphs sampled from the generator above
 
