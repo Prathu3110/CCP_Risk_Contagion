@@ -51,8 +51,22 @@ entropy is deterministic and contributes 1.
 | Configuration model | 0.364 | 0.089 [0.072, 0.107] | 0.022 | 20 of 20 | true degree sequence + weight multiset |
 | Erdős–Rényi | 0.075 | 0.397 [0.351, 0.443] | 0.250 | 0 of 20 | true density |
 
-**The money line:** maximum entropy recovers 100% of links and fails the
-behavioural test every time. Our model recovers 6% and passes 19 of 20.
+**The money line:** maximum entropy recovers 100% of links and is still told
+apart from the real system by the behavioural test (p < 0.001). Our model
+recovers 6% and passes 19 of 20.
+
+**Do not overstate this.** Maximum entropy is deterministic, so it contributes
+one sample and therefore one KS test, not twenty. The test is decisive on its
+own (p is effectively zero), but "fails every time" implies repeated trials that
+do not exist.
+
+**Do not oversell the model either.** It is not best on any single crisis
+measure: second on mean DebtRank, third on max DebtRank, fourth and last on
+cascade size. Its aggregate lead over maximum entropy and Erdos-Renyi comes
+almost entirely from mean DebtRank, where those two are catastrophic (0.556 and
+0.807 against our 0.150). Strip that measure out and the lead disappears. The
+honest claim is: second of four overall, beats both usable alternatives, loses
+to a method that is handed the answer.
 
 **The KS test direction is inverted and must be explained on the slide.** A
 *high* p-value is the good outcome: it means the generated distribution of

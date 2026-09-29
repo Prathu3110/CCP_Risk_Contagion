@@ -197,6 +197,13 @@ export default function Page() {
             from us. The evenly spread method wins the first group outright and loses the
             third by an order of magnitude.
           </p>
+          <p>
+            Our model loses the first group badly, and that is the point rather than a
+            defect. It is the only method here that never sees the network it is being
+            compared against, so it has no way to reproduce specific links and no reason
+            to try. Scoring near zero on a test we argue is the wrong test is what the
+            argument predicts. Judge it on the second group.
+          </p>
         </div>
         <div className="mt-8">
           <FullMetricsTable evaluation={evaluation} colours={colours} order={order} />
@@ -209,34 +216,57 @@ export default function Page() {
         </h2>
         <div className="mt-5 max-w-[62ch] space-y-4">
           <p>
-            Good on the measure that matters, and it has one clear weakness we have not
-            fixed.
+            Middling, and better than that sounds. It is not the best method on any single
+            measure. It is second of four overall on crisis behaviour, and it beats both
+            of the methods that could actually be used in its place.
           </p>
           <p>
-            Against the two methods that are genuine alternatives, it wins. Its crisis
-            behaviour is{" "}
-            <span className="tabular">{model.protocol_score.mean.toFixed(3)}</span> away
-            from the truth, against{" "}
+            Take the three crisis measures one at a time. On damage the average bank can
+            do it is second. On damage the worst bank can do it is third. On how many
+            banks fail it is fourth, which is to say last. Averaging those gives{" "}
+            <span className="tabular">{model.protocol_score.mean.toFixed(3)}</span>,
+            against{" "}
             <span className="tabular">{dense.protocol_score.mean.toFixed(3)}</span> for the
             evenly spread method and{" "}
             <span className="tabular">
               {evaluation.methods.erdos_renyi.protocol_score.mean.toFixed(3)}
             </span>{" "}
-            for random wiring. On the statistical test, its pattern of dangerous banks
-            could not be told apart from the real system&rsquo;s in{" "}
+            for random wiring.
+          </p>
+          <p>
+            That average is carried by one measure. On damage the average bank can do, the
+            other two are catastrophic &mdash;{" "}
+            <span className="tabular">
+              {evaluation.methods.max_entropy.gaps.mean_debtrank.mean.toFixed(3)}
+            </span>{" "}
+            and{" "}
+            <span className="tabular">
+              {evaluation.methods.erdos_renyi.gaps.mean_debtrank.mean.toFixed(3)}
+            </span>{" "}
+            against our{" "}
+            <span className="tabular">
+              {model.gaps.mean_debtrank.mean.toFixed(3)}
+            </span>
+            . Strip that measure out and our lead goes with it. Worth knowing, and it is
+            why the table above is on this page rather than only the two summary scores.
+          </p>
+          <p>
+            The strongest result is not on that table. A statistical test asked whether
+            our system&rsquo;s pattern of dangerous banks could be told apart from the real
+            one&rsquo;s, and it could not, in{" "}
             {Math.round(
               model.ks_debtrank.share_not_rejected_at_005 * model.n_samples,
             )}{" "}
-            of {model.n_samples} attempts. The evenly spread method failed that test every
-            single time, despite recovering every real link.
+            of {model.n_samples} attempts. The evenly spread method was told apart
+            immediately, despite recovering every real link.
           </p>
           <p>
-            The weakness: it understates how dangerous the typical bank is, by about a
-            third. It does not produce quite enough very large single debts, and it is the
-            rare large debt that makes one bank able to sink another. We report this
-            rather than tuning it away. It is also the best argument for the test itself.
-            A model built specifically for crisis realism still misses one of the
-            measures, which is exactly what a test is supposed to catch.
+            The weakness we have not fixed: it understates how dangerous the typical bank
+            is, by about a third. It does not produce quite enough very large single
+            debts, and it is the rare large debt that lets one bank sink another. We
+            report it rather than tuning it away. It is also the best argument for the test
+            itself. A model built specifically for crisis realism still misses, which is
+            exactly what a test is supposed to catch.
           </p>
         </div>
       </section>
@@ -699,7 +729,7 @@ export default function Page() {
             you can. That is where the evenly spread method comes from, and it has been
             known for some time that it produces systems that look safer than reality. Our
             contribution to that thread is to show how far the problem goes: the method
-            recovers every real link and is still rejected on every sample by the
+            recovers every real link and is still told apart from the real system by the
             behavioural test.
           </p>
           <p>

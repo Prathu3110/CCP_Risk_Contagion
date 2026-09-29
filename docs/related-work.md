@@ -85,9 +85,11 @@ Find: the econometric or interbank-specific statement of IPF/RAS.
 Must establish, and this is load-bearing for our argument: reconstructions that
 spread exposures evenly produce systems that look safer than reality, because
 the concentration that drives contagion is smoothed away. Our result — maximum
-entropy recovering every true link while its DebtRank distribution is rejected
-on every sample — is a sharper version of this finding, and the paper should say
-which prior work it sharpens.
+entropy recovering every true link while its DebtRank distribution is still
+rejected against the truth — is a sharper version of this finding, and the paper
+should say which prior work it sharpens. Note when writing it up that maximum
+entropy is deterministic and contributes one sample, so this is one decisive
+test rather than a rate.
 `TODO-VERIFY`
 
 **3.3 — Sparser reconstruction methods.**
