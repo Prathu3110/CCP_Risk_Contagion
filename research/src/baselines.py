@@ -5,11 +5,20 @@ count and the same balance sheet, differing only in the interbank adjacency
 matrix. Holding assets and equity fixed means any difference in contagion comes
 from the network and nothing else.
 
-Note the consequence for scoring: because these inherit the observed balance
-sheet exactly, they score a perfect zero on balance-sheet metrics such as mean
-equity ratio, while a generative model that invents its own balance sheets does
-not. That asymmetry flatters the baselines, so a baseline that still loses on
-the protocol score loses conservatively.
+These are reconstruction methods, and they are not competing on equal terms
+with a generator. Each is handed some summary of the network it is trying to
+reproduce: maximum entropy gets the exact row and column totals, the
+configuration model gets the exact degree sequence and the exact multiset of
+edge weights, Erdos-Renyi gets the density. The graph VAE is shown none of
+these. It never sees the target network at all.
+
+`INFORMATION_ACCESS` records that asymmetry so the paper can state it rather
+than be caught by it. It is not a caveat: a from-scratch generator matching an
+informed reconstruction on contagion behaviour is the result, not a confound in
+it.
+
+All of them inherit the observed balance sheet, which is why `evaluation.py`
+scores balance-sheet metrics separately from contagion ones.
 """
 
 from __future__ import annotations
@@ -20,6 +29,14 @@ from generators import Network
 
 _TOL = 1e-9
 _MAX_IPF = 500
+
+# What each method is given about the network it must reproduce.
+INFORMATION_ACCESS: dict[str, str] = {
+    "vae": "Nothing. Trained on other systems; never sees this network.",
+    "max_entropy": "Exact row and column totals of the true matrix.",
+    "configuration": "Exact degree sequence and exact multiset of true edge weights.",
+    "erdos_renyi": "Edge density of the true matrix.",
+}
 
 
 def _rescale_to(A: np.ndarray, target_total: float) -> np.ndarray:

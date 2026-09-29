@@ -22,7 +22,12 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from baselines import configuration_model, erdos_renyi, maximum_entropy  # noqa: E402
+from baselines import (  # noqa: E402
+    INFORMATION_ACCESS,
+    configuration_model,
+    erdos_renyi,
+    maximum_entropy,
+)
 from evaluation import behavioural_error, reconstruction_error  # noqa: E402
 from generators import Network  # noqa: E402
 
@@ -74,6 +79,7 @@ def main() -> None:
         behavioural = behavioural_error(observed, net, contagion_cfg, seed)
         results["methods"][key] = {
             "label": LABELS[key],
+            "sees": INFORMATION_ACCESS[key],
             "reconstruction": reconstruction,
             "behavioural": behavioural,
         }
@@ -85,21 +91,26 @@ def main() -> None:
 
 
 def report(results: dict[str, Any]) -> None:
-    print(f"\n{'Method':<24}{'edge F1':>9}{'Frobenius':>11}{'protocol':>10}{'mean DR':>10}{'cascade':>9}")
-    print("-" * 73)
+    header = f"{'Method':<24}{'recall':>8}{'F1':>7}{'Frob':>7}{'contagion':>11}{'structure':>11}"
+    print(f"\n{header}")
+    print("-" * len(header))
     for entry in results["methods"].values():
         reconstruction = entry["reconstruction"]
         behavioural = entry["behavioural"]
         print(
             f"{entry['label']:<24}"
-            f"{reconstruction['edge_f1']:>9.3f}"
-            f"{reconstruction['frobenius_relative']:>11.3f}"
-            f"{behavioural['protocol_score']:>10.3f}"
-            f"{behavioural['gaps']['mean_debtrank']:>10.3f}"
-            f"{behavioural['gaps']['mean_cascade_size']:>9.3f}"
+            f"{reconstruction['edge_recall']:>8.3f}"
+            f"{reconstruction['edge_f1']:>7.3f}"
+            f"{reconstruction['frobenius_relative']:>7.3f}"
+            f"{behavioural['protocol_score']:>11.3f}"
+            f"{behavioural['structure_score']:>11.3f}"
         )
-    print("\nedge F1: higher is better (conventional criterion).")
-    print("protocol / mean DR / cascade: relative gaps, lower is better (proposed criterion).")
+    print("\nrecall / F1: higher is better. Frobenius: lower is better. Conventional criterion.")
+    print("contagion: mean relative gap over mean DebtRank, max DebtRank, mean cascade size.")
+    print("structure: mean relative gap over density, assortativity, exposure size, equity ratio.")
+    print("\nWhat each method is shown about the network it must reproduce:")
+    for entry in results["methods"].values():
+        print(f"  {entry['label']:<24}{entry['sees']}")
 
 
 if __name__ == "__main__":

@@ -19,17 +19,30 @@ import numpy as np
 from contagion import cascade_size, debtrank
 from generators import Network, balance_sheet
 
-# Metrics entering `protocol_score`. Kept explicit so the protocol is a named,
-# fixed set rather than whatever a function happened to return that day.
-PROTOCOL_METRICS: tuple[str, ...] = (
+# The protocol proper: quantities that describe how a crisis behaves. Kept
+# explicit so it is a named, fixed set rather than whatever a function happened
+# to return that day.
+CONTAGION_METRICS: tuple[str, ...] = (
     "mean_debtrank",
     "max_debtrank",
     "mean_cascade_size",
+)
+
+# Reported alongside, never mixed in. These describe what a network looks like,
+# not how it fails. Folding them into one score lets a large structural gap
+# drown the contagion signal the protocol exists to measure: maximum entropy's
+# density gap alone is an order of magnitude larger than any contagion gap.
+# `mean_equity_ratio` is also trivially zero for any method that inherits the
+# observed balance sheet, which would flatter every baseline against a
+# generator that invents its own.
+STRUCTURE_METRICS: tuple[str, ...] = (
     "edge_density",
     "degree_assortativity",
     "mean_exposure",
     "mean_equity_ratio",
 )
+
+PROTOCOL_METRICS: tuple[str, ...] = CONTAGION_METRICS + STRUCTURE_METRICS
 
 
 def _relative_gap(true_value: float, generated: float) -> float:
@@ -126,8 +139,11 @@ def behavioural_error(
 ) -> dict[str, Any]:
     """The proposed criterion: does a crisis behave the same way?
 
-    Returns the relative gap on each protocol metric, the raw values behind
-    them, and `protocol_score`, the mean gap across the set. Lower is better.
+    Returns the relative gap on each metric, the raw values behind them,
+    `protocol_score` (mean gap across the contagion metrics) and
+    `structure_score` (mean gap across the structural ones). Lower is better.
+    The two are kept apart deliberately: the paper's claim is about contagion
+    behaviour, and a structural gap must not be allowed to stand in for it.
 
     The same `seed` is used for both networks' shock sweeps, so the two see an
     identical sequence of random shock spreads and any difference between them
@@ -143,5 +159,6 @@ def behavioural_error(
         "gaps": gaps,
         "observed_values": true_values,
         "generated_values": generated_values,
-        "protocol_score": float(np.mean([gaps[name] for name in PROTOCOL_METRICS])),
+        "protocol_score": float(np.mean([gaps[name] for name in CONTAGION_METRICS])),
+        "structure_score": float(np.mean([gaps[name] for name in STRUCTURE_METRICS])),
     }
