@@ -131,6 +131,42 @@ def describe(net: Network, cfg: dict[str, Any], seed: int) -> dict[str, float]:
     }
 
 
+def reference_statistics(
+    nets: list[Network], cfg: dict[str, Any], seed: int
+) -> dict[str, float]:
+    """Average protocol statistics across a set of networks.
+
+    A generator should match the distribution its training data came from, not
+    one particular draw from it. Selecting hyperparameters against a single
+    network rewards whichever setting happens to suit that draw, so tuning
+    compares against the mean of the validation set instead.
+    """
+    described = [describe(net, cfg, seed) for net in nets]
+    return {
+        name: float(np.mean([entry[name] for entry in described]))
+        for name in described[0]
+    }
+
+
+def error_against(
+    reference: dict[str, float],
+    net_generated: Network,
+    cfg: dict[str, Any],
+    seed: int,
+) -> dict[str, Any]:
+    """Score one generated network against pre-computed reference statistics."""
+    generated_values = describe(net_generated, cfg, seed)
+    gaps = {
+        name: _relative_gap(reference[name], generated_values[name])
+        for name in PROTOCOL_METRICS
+    }
+    return {
+        "gaps": gaps,
+        "protocol_score": float(np.mean([gaps[name] for name in CONTAGION_METRICS])),
+        "structure_score": float(np.mean([gaps[name] for name in STRUCTURE_METRICS])),
+    }
+
+
 def behavioural_error(
     net_true: Network,
     net_generated: Network,

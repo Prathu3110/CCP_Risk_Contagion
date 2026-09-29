@@ -141,11 +141,15 @@ def generate(
     # the spread of exposures is what drives contagion, and a mean-only decode
     # would produce a system where every exposure is the same size.
     weight_mu, weight_logvar = (t.numpy() for t in model.edge_weights(z_t))
-    sampled = (
-        weight_mu + np.exp(0.5 * weight_logvar) * rng.standard_normal(weight_mu.shape)
-        if flags["sample_weight_head"]
-        else weight_mu
-    )
+    if not flags["sample_weight_head"]:
+        sampled = weight_mu
+    elif str(cfg.get("weight_likelihood", "gaussian")) == "student_t":
+        # Sample from the same distribution the head was fitted under.
+        df = float(cfg.get("weight_df", 4.0))
+        scale = np.exp(0.5 * weight_logvar)
+        sampled = weight_mu + scale * rng.standard_t(df, size=weight_mu.shape)
+    else:
+        sampled = weight_mu + np.exp(0.5 * weight_logvar) * rng.standard_normal(weight_mu.shape)
     A = np.where(mask, scaler.to_weights(sampled), 0.0)
 
     node_mu, node_logvar = (t.numpy() for t in model.node_attributes(z_t))

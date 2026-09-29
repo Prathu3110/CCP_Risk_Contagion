@@ -42,18 +42,36 @@ calibration:
 
 corpus:
   n_train: 300               # training graphs sampled from the generator above
+  # A proper split. Every modelling and hyperparameter decision is made against
+  # the validation networks. The test networks are scored once, at the end, and
+  # nothing is ever selected on them. Without this, picking a hyperparameter by
+  # its contagion gap against the evaluation network is selection on the test
+  # set, which is what the first version of this project did.
+  n_validation: 20
+  n_test: 5
 
 gvae:
   latent_dim: 16
   hidden_dim: 32
-  epochs: 300
+  epochs: 600
   lr: 0.01
   log_every: 10
   pos_weight: 4.0            # up-weights the sparse positive class in edge BCE
   weight_loss_scale: 10.0    # MSE on edge weights is small; lift it into range
   kl_scale: 0.05             # beta on the KL term
-  latent_bandwidth: 0.40     # kernel width for sampling fresh node latents
-  edge_threshold: null       # null => pick the threshold that matches observed density
+  latent_bandwidth: 0.25     # kernel width for sampling fresh node latents
+  edge_threshold: null       # null => calibrate density from the training corpus
+  # Where the generator gets its target density. "corpus" is the mean density of
+  # the training networks, which the model is entitled to know. "target" would
+  # take it from the network being evaluated against, which hands the generator
+  # a true statistic and is exactly the privileged access we criticise the
+  # baselines for. Keep this on "corpus".
+  density_source: corpus
+  # Likelihood for the edge-weight head: gaussian or student_t. Student-t has a
+  # heavier tail, which is where the model currently falls short. Chosen on the
+  # validation networks by scripts/run_tuning.py, never on the test networks.
+  weight_likelihood: gaussian
+  weight_df: 4.0
   sample_seed: 7
 
 # Modelling choices that can be switched off one at a time, to measure what

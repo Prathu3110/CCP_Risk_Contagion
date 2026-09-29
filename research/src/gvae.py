@@ -136,13 +136,24 @@ def loss_function(
     weight_mu, weight_logvar = weights
     node_mu, node_logvar = node_pred
     if flags["sample_weight_head"]:
-        weight_loss = (
-            nn.functional.gaussian_nll_loss(
+        # A Gaussian likelihood shrinks the variance it reports, and the tail of
+        # the exposure distribution is what drives contagion. Student-t gives the
+        # head a way to fit occasional very large debts without widening the bulk.
+        likelihood = str(cfg.get("weight_likelihood", "gaussian"))
+        if present.any() and likelihood == "student_t":
+            scale = (0.5 * weight_logvar[present]).exp().clamp(min=1e-6)
+            student = torch.distributions.StudentT(
+                df=float(cfg.get("weight_df", 4.0)),
+                loc=weight_mu[present],
+                scale=scale,
+            )
+            weight_loss = -student.log_prob(batch.A[present]).mean()
+        elif present.any():
+            weight_loss = nn.functional.gaussian_nll_loss(
                 weight_mu[present], batch.A[present], weight_logvar[present].exp()
             )
-            if present.any()
-            else torch.zeros((), device=logits.device)
-        )
+        else:
+            weight_loss = torch.zeros((), device=logits.device)
         node_loss = nn.functional.gaussian_nll_loss(node_mu, batch.X, node_logvar.exp())
     else:
         # Squared error learns the conditional mean and nothing about spread.
