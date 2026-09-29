@@ -6,11 +6,13 @@
  * and there are no loading states anywhere in the app.
  */
 import contagionJson from "@/public/data/contagion.json";
+import evaluationJson from "@/public/data/evaluation.json";
 import metricsJson from "@/public/data/metrics.json";
 import networksJson from "@/public/data/networks.json";
 
-import type { Contagion, Metrics, Networks } from "./types";
+import type { Contagion, Evaluation, Metrics, Networks } from "./types";
 
-export const networks = networksJson as Networks;
-export const metrics = metricsJson as Metrics;
-export const contagion = contagionJson as Contagion;
+export const networks = networksJson as unknown as Networks;
+export const metrics = metricsJson as unknown as Metrics;
+export const contagion = contagionJson as unknown as Contagion;
+export const evaluation = evaluationJson as unknown as Evaluation;

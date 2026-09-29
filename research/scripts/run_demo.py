@@ -26,9 +26,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import export  # noqa: E402
 from contagion import cascade_size, debtrank  # noqa: E402
 from dataset import build_batch, generate  # noqa: E402
+from baselines import configuration_model, erdos_renyi, maximum_entropy  # noqa: E402
 from generators import Network, balance_sheet, sample_corpus, sample_network  # noqa: E402
 from gvae import GVAE, fit_latent_sampler, train  # noqa: E402
 from layout import match_by_degree, spring_positions, total_degree  # noqa: E402
+
+
+# Every method the page can show. `role` drives colour: observed is ink blue,
+# ours amber, baselines the grey ramp. Order here is the order on the page.
+METHODS: tuple[tuple[str, str, str], ...] = (
+    ("observed", "Simulated ground truth", "observed"),
+    ("vae", "Our model", "ours"),
+    ("max_entropy", "Maximum entropy", "baseline"),
+    ("configuration", "Configuration model", "baseline"),
+    ("erdos_renyi", "Erdos-Renyi", "baseline"),
+)
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -115,14 +127,28 @@ def main() -> None:
             rng=np.random.default_rng(int(cfg["gvae"]["sample_seed"])),
         )
 
-    print("Laying out both networks ...")
-    positions = spring_positions(observed.A, cfg["layout"])
-    generated_positions = match_by_degree(observed.A, positions, generated.A)
+    print("Building the baseline reconstructions ...")
+    systems: dict[str, Network] = {
+        "observed": observed,
+        "vae": generated,
+        "max_entropy": maximum_entropy(observed),
+        "configuration": configuration_model(observed, seed),
+        "erdos_renyi": erdos_renyi(observed, seed),
+    }
 
-    print("Running DebtRank on every bank ...")
+    print("Laying out every network on one shared set of positions ...")
+    # The layout is computed once on the observed network and reused, matched by
+    # degree rank. A bank in the same screen position is the comparable bank in
+    # every view. Re-laying-out per method would destroy that correspondence.
+    positions = spring_positions(observed.A, cfg["layout"])
+    coordinates = {
+        key: positions if key == "observed" else match_by_degree(observed.A, positions, net.A)
+        for key, net in systems.items()
+    }
+
+    print("Running DebtRank on every bank, for every method ...")
     shock = float(cfg["contagion"]["debtrank_shock"])
-    debtrank_observed = debtrank_profile(observed, shock)
-    debtrank_generated = debtrank_profile(generated, shock)
+    debtranks = {key: debtrank_profile(net, shock) for key, net in systems.items()}
 
     contagion_cfg = cfg["contagion"]
     shocks = np.linspace(
@@ -132,43 +158,54 @@ def main() -> None:
     )
     repeats = int(contagion_cfg["repeats"])
     print(f"Sweeping {len(shocks)} shock levels x {repeats} repeats through Eisenberg-Noe ...")
-    cascade_observed = cascade_curve(observed, shocks, repeats, np.random.default_rng(seed + 1))
-    cascade_generated = cascade_curve(generated, shocks, repeats, np.random.default_rng(seed + 1))
+    cascades = {
+        # Same seed for every method, so all of them meet an identical sequence
+        # of random shock spreads and only the network differs.
+        key: cascade_curve(net, shocks, repeats, np.random.default_rng(seed + 1))
+        for key, net in systems.items()
+    }
 
     out_dir = (args.config.resolve().parents[1] / cfg["export"]["out_dir"]).resolve()
     networks = {
         "n_nodes": int(cfg["network"]["n_nodes"]),
-        "observed": export.network_payload(observed, positions),
-        "generated": export.network_payload(generated, generated_positions),
+        "default_pair": ["observed", "vae"],
+        "methods": {
+            key: export.method_payload(key, label, role, systems[key], coordinates[key])
+            for key, label, role in METHODS
+        },
     }
     summary = export.summarise(observed, generated)
     metrics = {
         "training": training,
-        "degree_hist": export.shared_histogram(
-            total_degree(observed.A), total_degree(generated.A), int(cfg["export"]["degree_bins"])
+        "degree_hist": export.multi_histogram(
+            {key: total_degree(net.A) for key, net in systems.items()},
+            int(cfg["export"]["degree_bins"]),
         ),
-        "weight_hist": export.shared_histogram(
-            np.log10(observed.A[observed.A > 0]),
-            np.log10(generated.A[generated.A > 0]),
+        "weight_hist": export.multi_histogram(
+            {key: np.log10(net.A[net.A > 0]) for key, net in systems.items()},
             int(cfg["export"]["weight_bins"]),
         ),
-        "summary": summary,
+        "summary": {
+            "by_method": {
+                key: export.summarise(observed, systems[key])
+                for key, _label, _role in METHODS
+            }
+        },
     }
     contagion_payload = {
-        "debtrank": {
-            "observed": [round(float(v), 4) for v in debtrank_observed],
-            "generated": [round(float(v), 4) for v in debtrank_generated],
-        },
-        "cascade": {
-            "shock": [round(float(s), 3) for s in shocks],
-            "observed": export.band(cascade_observed),
-            "generated": export.band(cascade_generated),
+        "shock": [round(float(s), 3) for s in shocks],
+        "by_method": {
+            key: {
+                "debtrank": [round(float(v), 4) for v in debtranks[key]],
+                "cascade": export.band(cascades[key]),
+            }
+            for key, _label, _role in METHODS
         },
     }
 
     written = export.write_all(out_dir, networks, metrics, contagion_payload)
     save_networks(args.config.resolve().parents[1] / "results", observed, generated)
-    report(summary, debtrank_observed, debtrank_generated, cascade_observed, cascade_generated)
+    report(summary, debtranks["observed"], debtranks["vae"], cascades["observed"], cascades["vae"])
     print("\nWrote:")
     for path in written:
         print(f"  {path}")

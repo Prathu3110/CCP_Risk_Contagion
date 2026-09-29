@@ -206,8 +206,43 @@ def main() -> None:
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / "baselines.json").write_text(json.dumps(single, indent=1) + "\n")
     (RESULTS / "ensemble.json").write_text(json.dumps(ensemble, indent=1) + "\n")
+    write_web_evaluation(ensemble)
     report(ensemble)
     print(f"\nWrote {RESULTS / 'baselines.json'}\nWrote {RESULTS / 'ensemble.json'}")
+
+
+def write_web_evaluation(ensemble: dict[str, Any]) -> None:
+    """Ship the ensemble scores to the page, which plots them as its hero.
+
+    Only the summary each point on the scatter needs; the page never sees the
+    per-sample values.
+    """
+    payload = {
+        "seed": ensemble["seed"],
+        "samples": ensemble["samples_requested"],
+        "methods": {
+            key: {
+                "label": entry["label"],
+                "sees": entry["sees"],
+                "n_samples": entry["n_samples"],
+                "edge_recall": entry["edge_recall"],
+                "edge_f1": entry["edge_f1"],
+                "protocol_score": entry["protocol_score"],
+                "structure_score": entry["structure_score"],
+                "ks_debtrank": {
+                    "median_p": entry["ks_debtrank"]["median_p"],
+                    "share_not_rejected_at_005": entry["ks_debtrank"][
+                        "share_not_rejected_at_005"
+                    ],
+                },
+            }
+            for key, entry in ensemble["methods"].items()
+        },
+    }
+    out = ROOT / "web" / "public" / "data" / "evaluation.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=1) + "\n")
+    print(f"Wrote {out}")
 
 
 def cascade_band(curves: np.ndarray, seed: int) -> dict[str, list[float]]:

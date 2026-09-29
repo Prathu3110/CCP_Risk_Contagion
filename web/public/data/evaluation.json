@@ -1,0 +1,122 @@
+{
+ "seed": 20260915,
+ "samples": 20,
+ "methods": {
+  "vae": {
+   "label": "Our model (graph VAE)",
+   "sees": "Nothing. Trained on other systems; never sees this network.",
+   "n_samples": 20,
+   "edge_recall": {
+    "mean": 0.06444043321299639,
+    "lo": 0.05415162454873647,
+    "hi": 0.07545126353790614
+   },
+   "edge_f1": {
+    "mean": 0.06459955629276946,
+    "lo": 0.0542535159309945,
+    "hi": 0.07589932025766703
+   },
+   "protocol_score": {
+    "mean": 0.1225621246269409,
+    "lo": 0.0919431066570007,
+    "hi": 0.15702231415173395
+   },
+   "structure_score": {
+    "mean": 0.09079013424926122,
+    "lo": 0.07583870875118713,
+    "hi": 0.10667366588171275
+   },
+   "ks_debtrank": {
+    "median_p": 0.5888814359360303,
+    "share_not_rejected_at_005": 0.95
+   }
+  },
+  "max_entropy": {
+   "label": "Maximum entropy",
+   "sees": "Exact row and column totals of the true matrix.",
+   "n_samples": 1,
+   "edge_recall": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0
+   },
+   "edge_f1": {
+    "mean": 0.15453277545327757,
+    "lo": 0.15453277545327757,
+    "hi": 0.15453277545327757
+   },
+   "protocol_score": {
+    "mean": 0.20546698679030564,
+    "lo": 0.20546698679030564,
+    "hi": 0.20546698679030564
+   },
+   "structure_score": {
+    "mean": 3.2142040330532176,
+    "lo": 3.2142040330532176,
+    "hi": 3.2142040330532176
+   },
+   "ks_debtrank": {
+    "median_p": 1.9360373938277886e-05,
+    "share_not_rejected_at_005": 0.0
+   }
+  },
+  "configuration": {
+   "label": "Configuration model",
+   "sees": "Exact degree sequence and exact multiset of true edge weights.",
+   "n_samples": 20,
+   "edge_recall": {
+    "mean": 0.36353790613718406,
+    "lo": 0.3552346570397112,
+    "hi": 0.37238267148014437
+   },
+   "edge_f1": {
+    "mean": 0.36377369804727555,
+    "lo": 0.3554305201036682,
+    "hi": 0.3726857015036394
+   },
+   "protocol_score": {
+    "mean": 0.08899159504222719,
+    "lo": 0.07229935475664513,
+    "hi": 0.10734003555289268
+   },
+   "structure_score": {
+    "mean": 0.02186657722056373,
+    "lo": 0.017445064250993084,
+    "hi": 0.026049497414628867
+   },
+   "ks_debtrank": {
+    "median_p": 0.6647505590510205,
+    "share_not_rejected_at_005": 1.0
+   }
+  },
+  "erdos_renyi": {
+   "label": "Erdos-Renyi",
+   "sees": "Edge density of the true matrix.",
+   "n_samples": 20,
+   "edge_recall": {
+    "mean": 0.07490974729241875,
+    "lo": 0.06787003610108303,
+    "hi": 0.08267148014440431
+   },
+   "edge_f1": {
+    "mean": 0.07587456984320769,
+    "lo": 0.06866108974584607,
+    "hi": 0.0836147729921919
+   },
+   "protocol_score": {
+    "mean": 0.39717091288980305,
+    "lo": 0.3505990314405352,
+    "hi": 0.4428364008203025
+   },
+   "structure_score": {
+    "mean": 0.25018544839155243,
+    "lo": 0.23531222019284226,
+    "hi": 0.2648881330711978
+   },
+   "ks_debtrank": {
+    "median_p": 5.201709664451098e-06,
+    "share_not_rejected_at_005": 0.0
+   }
+  }
+ }
+}

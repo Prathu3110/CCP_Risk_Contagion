@@ -608,165 +608,481 @@
  "degree_hist": {
   "bins": [
    0.0,
-   2.95,
-   5.9,
-   8.85,
-   11.8,
-   14.75,
-   17.7,
-   20.65,
-   23.6,
-   26.55,
-   29.5,
-   32.45,
-   35.4,
-   38.35,
-   41.3,
-   44.25,
-   47.2,
-   50.15,
-   53.1,
-   56.05,
-   59.0
+   5.7,
+   11.4,
+   17.1,
+   22.8,
+   28.5,
+   34.2,
+   39.9,
+   45.6,
+   51.3,
+   57.0,
+   62.7,
+   68.4,
+   74.1,
+   79.8,
+   85.5,
+   91.2,
+   96.9,
+   102.6,
+   108.3,
+   114.0
   ],
-  "observed": [
-   3,
-   24,
-   23,
-   4,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   0,
-   1,
-   4,
-   0,
-   0,
-   1,
-   0,
-   0,
-   0
-  ],
-  "generated": [
-   9,
-   18,
-   16,
-   8,
-   2,
-   1,
-   0,
-   0,
-   1,
-   0,
-   0,
-   1,
-   0,
-   1,
-   0,
-   1,
-   0,
-   1,
-   0,
-   1
-  ]
+  "by_method": {
+   "observed": [
+    27,
+    27,
+    0,
+    0,
+    0,
+    0,
+    3,
+    2,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "vae": [
+    27,
+    24,
+    3,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "max_entropy": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    4,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    56
+   ],
+   "configuration": [
+    28,
+    26,
+    0,
+    0,
+    0,
+    0,
+    4,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "erdos_renyi": [
+    2,
+    44,
+    14,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
  },
  "weight_hist": {
   "bins": [
-   -2.5382,
-   -2.3711,
-   -2.204,
-   -2.0369,
-   -1.8698,
-   -1.7027,
-   -1.5355,
-   -1.3684,
-   -1.2013,
-   -1.0342,
-   -0.8671,
-   -0.7,
-   -0.5328
+   -5.117,
+   -4.7347,
+   -4.3524,
+   -3.9701,
+   -3.5879,
+   -3.2056,
+   -2.8233,
+   -2.441,
+   -2.0587,
+   -1.6764,
+   -1.2941,
+   -0.9119,
+   -0.5296
   ],
-  "observed": [
-   4,
-   8,
-   19,
-   22,
-   30,
-   46,
-   61,
-   40,
-   29,
-   11,
-   4,
-   3
-  ],
-  "generated": [
-   0,
-   3,
-   13,
-   31,
-   39,
-   43,
-   59,
-   35,
-   43,
-   18,
-   4,
-   1
-  ]
- },
- "summary": [
-  {
-   "name": "Mean degree",
-   "observed": 9.2333,
-   "generated": 9.6333,
-   "gap_pct": 4.3
-  },
-  {
-   "name": "Max degree",
-   "observed": 49.0,
-   "generated": 59.0,
-   "gap_pct": 20.4
-  },
-  {
-   "name": "Edge count",
-   "observed": 277.0,
-   "generated": 289.0,
-   "gap_pct": 4.3
-  },
-  {
-   "name": "Density",
-   "observed": 0.0782,
-   "generated": 0.0816,
-   "gap_pct": 4.3
-  },
-  {
-   "name": "Mean exposure",
-   "observed": 0.0397,
-   "generated": 0.0412,
-   "gap_pct": 3.8
-  },
-  {
-   "name": "Total exposure",
-   "observed": 11.005,
-   "generated": 11.9147,
-   "gap_pct": 8.3
-  },
-  {
-   "name": "Degree assortativity",
-   "observed": -0.3589,
-   "generated": -0.4238,
-   "gap_pct": 18.1
-  },
-  {
-   "name": "Mean equity ratio",
-   "observed": 0.0813,
-   "generated": 0.0837,
-   "gap_pct": 2.9
+  "by_method": {
+   "observed": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    26,
+    60,
+    115,
+    66,
+    8
+   ],
+   "vae": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    12,
+    80,
+    114,
+    75,
+    8
+   ],
+   "max_entropy": [
+    8,
+    62,
+    197,
+    473,
+    744,
+    706,
+    508,
+    320,
+    207,
+    53,
+    29,
+    1
+   ],
+   "configuration": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    25,
+    60,
+    114,
+    66,
+    8
+   ],
+   "erdos_renyi": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    26,
+    61,
+    121,
+    76,
+    5
+   ]
   }
- ]
+ },
+ "summary": {
+  "by_method": {
+   "observed": [
+    {
+     "name": "Mean degree",
+     "observed": 9.2333,
+     "generated": 9.2333,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Max degree",
+     "observed": 49.0,
+     "generated": 49.0,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Edge count",
+     "observed": 277.0,
+     "generated": 277.0,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Density",
+     "observed": 0.0782,
+     "generated": 0.0782,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Mean exposure",
+     "observed": 0.0397,
+     "generated": 0.0397,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Total exposure",
+     "observed": 11.005,
+     "generated": 11.005,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Degree assortativity",
+     "observed": -0.3589,
+     "generated": -0.3589,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Mean equity ratio",
+     "observed": 0.0813,
+     "generated": 0.0813,
+     "gap_pct": 0.0
+    }
+   ],
+   "vae": [
+    {
+     "name": "Mean degree",
+     "observed": 9.2333,
+     "generated": 9.6333,
+     "gap_pct": 4.3
+    },
+    {
+     "name": "Max degree",
+     "observed": 49.0,
+     "generated": 59.0,
+     "gap_pct": 20.4
+    },
+    {
+     "name": "Edge count",
+     "observed": 277.0,
+     "generated": 289.0,
+     "gap_pct": 4.3
+    },
+    {
+     "name": "Density",
+     "observed": 0.0782,
+     "generated": 0.0816,
+     "gap_pct": 4.3
+    },
+    {
+     "name": "Mean exposure",
+     "observed": 0.0397,
+     "generated": 0.0412,
+     "gap_pct": 3.8
+    },
+    {
+     "name": "Total exposure",
+     "observed": 11.005,
+     "generated": 11.9147,
+     "gap_pct": 8.3
+    },
+    {
+     "name": "Degree assortativity",
+     "observed": -0.3589,
+     "generated": -0.4238,
+     "gap_pct": 18.1
+    },
+    {
+     "name": "Mean equity ratio",
+     "observed": 0.0813,
+     "generated": 0.0837,
+     "gap_pct": 2.9
+    }
+   ],
+   "max_entropy": [
+    {
+     "name": "Mean degree",
+     "observed": 9.2333,
+     "generated": 110.2667,
+     "gap_pct": 1094.2
+    },
+    {
+     "name": "Max degree",
+     "observed": 49.0,
+     "generated": 114.0,
+     "gap_pct": 132.7
+    },
+    {
+     "name": "Edge count",
+     "observed": 277.0,
+     "generated": 3308.0,
+     "gap_pct": 1094.2
+    },
+    {
+     "name": "Density",
+     "observed": 0.0782,
+     "generated": 0.9345,
+     "gap_pct": 1094.2
+    },
+    {
+     "name": "Mean exposure",
+     "observed": 0.0397,
+     "generated": 0.0033,
+     "gap_pct": 91.6
+    },
+    {
+     "name": "Total exposure",
+     "observed": 11.005,
+     "generated": 11.005,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Degree assortativity",
+     "observed": -0.3589,
+     "generated": -0.0006,
+     "gap_pct": 99.8
+    },
+    {
+     "name": "Mean equity ratio",
+     "observed": 0.0813,
+     "generated": 0.0813,
+     "gap_pct": 0.0
+    }
+   ],
+   "configuration": [
+    {
+     "name": "Mean degree",
+     "observed": 9.2333,
+     "generated": 9.1667,
+     "gap_pct": 0.7
+    },
+    {
+     "name": "Max degree",
+     "observed": 49.0,
+     "generated": 49.0,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Edge count",
+     "observed": 277.0,
+     "generated": 275.0,
+     "gap_pct": 0.7
+    },
+    {
+     "name": "Density",
+     "observed": 0.0782,
+     "generated": 0.0777,
+     "gap_pct": 0.7
+    },
+    {
+     "name": "Mean exposure",
+     "observed": 0.0397,
+     "generated": 0.04,
+     "gap_pct": 0.7
+    },
+    {
+     "name": "Total exposure",
+     "observed": 11.005,
+     "generated": 11.005,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Degree assortativity",
+     "observed": -0.3589,
+     "generated": -0.3981,
+     "gap_pct": 10.9
+    },
+    {
+     "name": "Mean equity ratio",
+     "observed": 0.0813,
+     "generated": 0.0813,
+     "gap_pct": 0.0
+    }
+   ],
+   "erdos_renyi": [
+    {
+     "name": "Mean degree",
+     "observed": 9.2333,
+     "generated": 9.7,
+     "gap_pct": 5.1
+    },
+    {
+     "name": "Max degree",
+     "observed": 49.0,
+     "generated": 15.0,
+     "gap_pct": 69.4
+    },
+    {
+     "name": "Edge count",
+     "observed": 277.0,
+     "generated": 291.0,
+     "gap_pct": 5.1
+    },
+    {
+     "name": "Density",
+     "observed": 0.0782,
+     "generated": 0.0822,
+     "gap_pct": 5.1
+    },
+    {
+     "name": "Mean exposure",
+     "observed": 0.0397,
+     "generated": 0.0378,
+     "gap_pct": 4.8
+    },
+    {
+     "name": "Total exposure",
+     "observed": 11.005,
+     "generated": 11.005,
+     "gap_pct": 0.0
+    },
+    {
+     "name": "Degree assortativity",
+     "observed": -0.3589,
+     "generated": 0.0593,
+     "gap_pct": 116.5
+    },
+    {
+     "name": "Mean equity ratio",
+     "observed": 0.0813,
+     "generated": 0.0813,
+     "gap_pct": 0.0
+    }
+   ]
+  }
+ }
 }

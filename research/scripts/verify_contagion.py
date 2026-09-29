@@ -20,8 +20,8 @@ def main() -> None:
     payload = json.loads(DATA.read_text())
     n = payload["n_nodes"]
 
-    for series in ("observed", "generated"):
-        graph = payload[series]
+    for series in ("observed", "vae"):
+        graph = payload["methods"][series]
         A = np.zeros((n, n))
         for edge in graph["edges"]:
             A[edge["s"], edge["t"]] = edge["w"]

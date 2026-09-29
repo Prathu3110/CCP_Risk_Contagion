@@ -1,27 +1,22 @@
-import type { Histogram } from "./types";
+/** Binning helpers for values the pipeline ships raw, such as DebtRank. */
 
-/** Bin two series of raw values onto one shared set of edges. */
-export function sharedHistogram(
-  observed: number[],
-  generated: number[],
-  binCount: number,
-): Histogram {
-  const all = [...observed, ...generated];
-  const min = Math.min(...all);
-  const max = Math.max(...all);
-  const width = (max - min) / binCount || 1;
+/** Equal-width bin edges spanning every value given. */
+export function binEdges(values: number[], count: number): number[] {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const width = (max - min) / count || 1;
+  return Array.from({ length: count + 1 }, (_, i) => min + i * width);
+}
 
-  const bins = Array.from({ length: binCount + 1 }, (_, i) => min + i * width);
-  const count = (values: number[]) => {
-    const counts = new Array<number>(binCount).fill(0);
-    for (const value of values) {
-      const index = Math.min(binCount - 1, Math.floor((value - min) / width));
-      counts[index] += 1;
-    }
-    return counts;
-  };
-
-  return { bins, observed: count(observed), generated: count(generated) };
+/** Count values into bins defined by `edges`, clamping the ends. */
+export function countInto(values: number[], edges: number[]): number[] {
+  const counts = new Array<number>(edges.length - 1).fill(0);
+  const width = edges[1] - edges[0];
+  for (const value of values) {
+    const index = Math.min(counts.length - 1, Math.max(0, Math.floor((value - edges[0]) / width)));
+    counts[index] += 1;
+  }
+  return counts;
 }
 
 export const mean = (values: number[]) =>

@@ -3,26 +3,26 @@
 import { useCallback, useMemo, useRef } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 
-import type { NetworkGraph, Series } from "@/lib/types";
+import type { NetworkGraph } from "@/lib/types";
 
 /** Positions arrive normalised 0-1; the drawing is a unit square scaled up. */
 const VIEW = 100;
 /** How long the whole edge reveal takes for one network. */
 const REVEAL_MS = 800;
 
-const STROKE: Record<Series, string> = {
-  observed: "var(--color-observed)",
-  generated: "var(--color-generated)",
-};
-
 /** Amber carries less contrast against paper than ink blue does, so matching
-    the two numerically would make the generated system look sparser than it
-    is. These are matched by eye, not by value. */
-const RESTING_EDGE: Record<Series, number> = { observed: 0.34, generated: 0.42 };
+    opacities numerically would make the amber network look sparser than it is.
+    These are matched by eye, not by value. A near-complete network such as
+    maximum entropy's needs a far lower value again, or it renders as a solid
+    block; the caller passes that in. */
+export const RESTING_EDGE = { observed: 0.34, accented: 0.42, dense: 0.08 };
 
 type Props = {
   graph: NetworkGraph;
-  series: Series;
+  /** Resolved colour for this method, from `lib/methods.ts`. */
+  colour: string;
+  /** Resting opacity for edges, lowered for near-complete networks. */
+  edgeOpacity?: number;
   /** Used for the accessible name, e.g. "observed system". */
   name: string;
   /** Offset into the page's one reveal, so the two networks draw in sequence. */
@@ -44,7 +44,8 @@ const vars = (values: Record<string, string | number>) => values as CSSPropertie
 
 export default function NetworkPlot({
   graph,
-  series,
+  colour,
+  edgeOpacity = RESTING_EDGE.observed,
   name,
   revealStartMs,
   hoveredSlot,
@@ -161,7 +162,7 @@ export default function NetworkPlot({
               y1={edge.y1}
               x2={edge.x2}
               y2={edge.y2}
-              stroke={defaulted ? "var(--color-stress)" : STROKE[series]}
+              stroke={defaulted ? "var(--color-stress)" : colour}
               strokeWidth={edge.width}
               opacity={
                 focus !== null && !touched
@@ -170,7 +171,7 @@ export default function NetworkPlot({
                     ? 0.72
                     : focus !== null
                       ? 0.95
-                      : RESTING_EDGE[series]
+                      : edgeOpacity
               }
               style={vars({
                 "--len": edge.length,
@@ -194,7 +195,7 @@ export default function NetworkPlot({
           const dimmed = focus !== null && !isFocus && !isNeighbour;
           const counterparties = degrees.get(node.id) ?? 0;
           const hasFailed = failed?.has(node.id) ?? false;
-          const fill = hasFailed ? "var(--color-stress)" : STROKE[series];
+          const fill = hasFailed ? "var(--color-stress)" : colour;
 
           return (
             <g

@@ -2,18 +2,20 @@ import { scaleLinear } from "d3-scale";
 import { area, line } from "d3-shape";
 
 import ChartFrame, { MARGIN } from "@/components/ChartFrame";
-import type { Histogram as HistogramData, Series } from "@/lib/types";
 
 const WIDTH = 620;
 const HEIGHT = 320;
 
-const COLOUR: Record<Series, string> = {
-  observed: "var(--color-observed)",
-  generated: "var(--color-generated)",
-};
+export interface HistogramSeries {
+  key: string;
+  label: string;
+  colour: string;
+  counts: number[];
+}
 
 type Props = {
-  data: HistogramData;
+  bins: number[];
+  series: HistogramSeries[];
   title: string;
   xLabel: string;
   xTicks?: number[];
@@ -21,16 +23,16 @@ type Props = {
 };
 
 /**
- * Two counts on one set of bins, drawn as overlaid step outlines.
+ * Several counts on one set of bins, drawn as overlaid step outlines.
  *
- * Bars would have to be either side by side, which reads as two separate
- * things, or stacked, which hides the comparison. An outline lets one curve
- * sit on top of the other and be judged by how closely they track.
+ * Bars would have to be side by side, which reads as separate things, or
+ * stacked, which hides the comparison. Outlines let the curves sit on top of
+ * one another and be judged by how closely they track.
  */
-export default function Histogram({ data, title, xLabel, xTicks, formatX = String }: Props) {
-  const counts = [...data.observed, ...data.generated];
+export default function Histogram({ bins, series, title, xLabel, xTicks, formatX = String }: Props) {
+  const counts = series.flatMap((entry) => entry.counts);
   const x = scaleLinear()
-    .domain([data.bins[0], data.bins[data.bins.length - 1]])
+    .domain([bins[0], bins[bins.length - 1]])
     .range([MARGIN.left, WIDTH - MARGIN.right]);
   const y = scaleLinear()
     .domain([0, Math.max(...counts)])
@@ -40,8 +42,8 @@ export default function Histogram({ data, title, xLabel, xTicks, formatX = Strin
   /** Trace the top of each bar, giving the exact outline of the histogram. */
   const steps = (values: number[]) =>
     values.flatMap((count, index) => [
-      { value: data.bins[index], count },
-      { value: data.bins[index + 1], count },
+      { value: bins[index], count },
+      { value: bins[index + 1], count },
     ]);
 
   const toLine = line<{ value: number; count: number }>()
@@ -64,15 +66,15 @@ export default function Histogram({ data, title, xLabel, xTicks, formatX = Strin
       formatX={formatX}
       title={title}
     >
-      {(["observed", "generated"] as Series[]).map((series) => {
-        const points = steps(data[series]);
+      {series.map((entry) => {
+        const points = steps(entry.counts);
         return (
-          <g key={series}>
-            <path d={toArea(points) ?? ""} fill={COLOUR[series]} fillOpacity={0.07} />
+          <g key={entry.key}>
+            <path d={toArea(points) ?? ""} fill={entry.colour} fillOpacity={0.07} />
             <path
               d={toLine(points) ?? ""}
               fill="none"
-              stroke={COLOUR[series]}
+              stroke={entry.colour}
               strokeWidth={2.2}
               strokeLinejoin="round"
             />

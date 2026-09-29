@@ -9,10 +9,10 @@ import networksJson from "../public/data/networks.json";
 import { cascadeRounds, debtRankScore, distressRounds, toBalance } from "../lib/contagion";
 import type { Networks } from "../lib/types";
 
-const networks = networksJson as Networks;
+const networks = networksJson as unknown as Networks;
 
-for (const series of ["observed", "generated"] as const) {
-  const balance = toBalance(networks[series]);
+for (const series of ["observed", "vae"] as const) {
+  const balance = toBalance(networks.methods[series]);
   const cascade: string[] = [];
   for (let shock = 0.05; shock <= 0.501; shock += 0.05) {
     const rounds = cascadeRounds(balance, new Array(balance.n).fill(shock));

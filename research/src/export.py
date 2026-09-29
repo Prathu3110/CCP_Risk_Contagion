@@ -1,8 +1,12 @@
 """Builds the three JSON files the web app reads.
 
-The schema here is the contract in section 3 of CCP-DEMO-BUILD-PLAN.md and is
-mirrored by `web/lib/types.ts`. Python and the web app never talk at runtime:
-this module writes static files and exits.
+The schema is mirrored by `web/lib/types.ts`. Python and the web app never talk
+at runtime: this module writes static files and exits.
+
+The contract carries every method, not a hardcoded observed/generated pair, so
+adding a sixth needs only a new entry. `role` drives colour in the page -
+`observed` is ink blue, `ours` amber, `baseline` the grey ramp - and a colour is
+never keyed to a method name.
 """
 
 from __future__ import annotations
@@ -61,6 +65,21 @@ def network_payload(net: Network, positions: np.ndarray) -> dict[str, Any]:
         for s, t in zip(sources, targets)
     ]
     return {"nodes": nodes, "edges": edges}
+
+
+def multi_histogram(
+    series: dict[str, np.ndarray], bins: int
+) -> dict[str, Any]:
+    """One set of bin edges shared by every method, so the curves are comparable."""
+    combined = np.concatenate([values for values in series.values() if len(values)])
+    edges = np.histogram_bin_edges(combined, bins=bins)
+    return {
+        "bins": [_round(edge) for edge in edges],
+        "by_method": {
+            key: [int(count) for count in np.histogram(values, bins=edges)[0]]
+            for key, values in series.items()
+        },
+    }
 
 
 def shared_histogram(
@@ -126,6 +145,15 @@ def band(samples: Iterable[np.ndarray]) -> dict[str, list[float]]:
         "lo": [_round(v) for v in np.percentile(stacked, 10, axis=1)],
         "hi": [_round(v) for v in np.percentile(stacked, 90, axis=1)],
     }
+
+
+def method_payload(
+    key: str, label: str, role: str, net: Network, positions: np.ndarray
+) -> dict[str, Any]:
+    """One method's drawing, tagged with what it is so the page can colour it."""
+    payload = network_payload(net, positions)
+    payload.update({"key": key, "label": label, "role": role})
+    return payload
 
 
 def write_all(out_dir: Path, networks: dict, metrics: dict, contagion: dict) -> list[Path]:

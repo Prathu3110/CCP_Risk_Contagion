@@ -2,15 +2,17 @@ import { scaleLinear } from "d3-scale";
 import { area, line } from "d3-shape";
 
 import ChartFrame, { MARGIN } from "@/components/ChartFrame";
-import type { Cascade, Series } from "@/lib/types";
+import type { Band } from "@/lib/types";
 
 const WIDTH = 620;
 const HEIGHT = 340;
 
-const COLOUR: Record<Series, string> = {
-  observed: "var(--color-observed)",
-  generated: "var(--color-generated)",
-};
+export interface CascadeSeries {
+  key: string;
+  label: string;
+  colour: string;
+  band: Band;
+}
 
 type Point = { shock: number; mean: number; lo: number; hi: number };
 
@@ -21,18 +23,24 @@ type Point = { shock: number; mean: number; lo: number; hi: number };
  * lands differently depending on which banks absorb it, and the band is the
  * honest width of that spread.
  */
-export default function CascadeChart({ cascade }: { cascade: Cascade }) {
+export default function CascadeChart({
+  shock,
+  series,
+}: {
+  shock: number[];
+  series: CascadeSeries[];
+}) {
   const x = scaleLinear()
-    .domain([cascade.shock[0], cascade.shock[cascade.shock.length - 1]])
+    .domain([shock[0], shock[shock.length - 1]])
     .range([MARGIN.left, WIDTH - MARGIN.right]);
   const y = scaleLinear().domain([0, 1]).range([HEIGHT - MARGIN.bottom, MARGIN.top]);
 
-  const points = (series: Series): Point[] =>
-    cascade.shock.map((shock, index) => ({
-      shock,
-      mean: cascade[series].mean[index],
-      lo: cascade[series].lo[index],
-      hi: cascade[series].hi[index],
+  const points = (band: Band): Point[] =>
+    shock.map((level, index) => ({
+      shock: level,
+      mean: band.mean[index],
+      lo: band.lo[index],
+      hi: band.hi[index],
     }));
 
   const toLine = line<Point>()
@@ -53,11 +61,11 @@ export default function CascadeChart({ cascade }: { cascade: Cascade }) {
       y={y}
       xLabel="Share of outside assets destroyed"
       yLabel="Share of banks that default"
-      xTicks={cascade.shock.filter((_, index) => index % 2 === 0)}
+      xTicks={shock.filter((_, index) => index % 2 === 0)}
       yTicks={[0, 0.25, 0.5, 0.75, 1]}
       formatX={(value) => `${Math.round(value * 100)}%`}
       formatY={(value) => `${Math.round(value * 100)}%`}
-      title="Share of banks that default as the initial shock grows, observed against generated"
+      title="Share of banks that default as the initial shock grows"
     >
       {/* Deep red means one thing on this page: a bank has defaulted. */}
       <line
@@ -80,15 +88,15 @@ export default function CascadeChart({ cascade }: { cascade: Cascade }) {
         half the system has failed
       </text>
 
-      {(["observed", "generated"] as Series[]).map((series) => {
-        const data = points(series);
+      {series.map((entry) => {
+        const data = points(entry.band);
         return (
-          <g key={series}>
-            <path d={toBand(data) ?? ""} fill={COLOUR[series]} fillOpacity={0.18} />
+          <g key={entry.key}>
+            <path d={toBand(data) ?? ""} fill={entry.colour} fillOpacity={0.18} />
             <path
               d={toLine(data) ?? ""}
               fill="none"
-              stroke={COLOUR[series]}
+              stroke={entry.colour}
               strokeWidth={2.4}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -99,7 +107,7 @@ export default function CascadeChart({ cascade }: { cascade: Cascade }) {
                 cx={x(point.shock)}
                 cy={y(point.mean)}
                 r={2.8}
-                fill={COLOUR[series]}
+                fill={entry.colour}
               />
             ))}
           </g>

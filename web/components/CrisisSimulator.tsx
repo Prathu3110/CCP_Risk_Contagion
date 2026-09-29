@@ -11,7 +11,8 @@ import {
   describeSingleBank,
 } from "@/lib/analysis";
 import { cascadeRounds, toBalance, type CascadeRound } from "@/lib/contagion";
-import type { Networks, Series } from "@/lib/types";
+import { methodColours } from "@/lib/methods";
+import type { MethodKey, Networks } from "@/lib/types";
 
 const ROUND_MS = 750;
 
@@ -24,23 +25,30 @@ const ROUND_MS = 750;
  * checked against it; the numbers here are the same ones behind the chart above.
  */
 export default function CrisisSimulator({ networks }: { networks: Networks }) {
+  const [comparison, setComparison] = useState<MethodKey>(networks.default_pair[1]);
   const [shock, setShock] = useState(0.15);
   const [selected, setSelected] = useState<number | null>(null);
   const [step, setStep] = useState(-1);
   const [playing, setPlaying] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
 
+  const colours = useMemo(() => methodColours(networks), [networks]);
+  const truth = networks.default_pair[0];
+  // Memoised because it is a useMemo dependency; a fresh array each render
+  // would rerun every cascade.
+  const sides = useMemo<[MethodKey, MethodKey]>(() => [truth, comparison], [truth, comparison]);
+
   const balances = useMemo(
-    () => ({
-      observed: toBalance(networks.observed),
-      generated: toBalance(networks.generated),
-    }),
+    () =>
+      Object.fromEntries(
+        Object.entries(networks.methods).map(([key, graph]) => [key, toBalance(graph)]),
+      ),
     [networks],
   );
 
   const rounds = useMemo(() => {
-    const run = (series: Series): CascadeRound[] => {
-      const balance = balances[series];
+    const run = (key: MethodKey): CascadeRound[] => {
+      const balance = balances[key];
       // One bank can be singled out and wiped out entirely, on top of whatever
       // system-wide shock is set; that is how you test whether a bank is
       // systemic on its own.
@@ -49,8 +57,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
       );
       return cascadeRounds(balance, vector);
     };
-    return { observed: run("observed"), generated: run("generated") };
-  }, [balances, shock, selected]);
+    return { observed: run(sides[0]), generated: run(sides[1]) };
+  }, [balances, shock, selected, sides]);
 
   const lastStep = Math.max(rounds.observed.length, rounds.generated.length) - 1;
   // Derived rather than stored, so the run stops on its own when it reaches the
@@ -102,8 +110,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
     rewind();
   }, [rewind]);
 
-  const stateFor = (series: Series) => {
-    const series_rounds = rounds[series];
+  const stateFor = (side: "observed" | "generated") => {
+    const series_rounds = rounds[side];
     if (step < 0) return { failed: new Set<number>(), justFailed: new Set<number>() };
     const round = series_rounds[Math.min(step, series_rounds.length - 1)];
     const isCurrent = step < series_rounds.length;
@@ -119,8 +127,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
 
   const settled = step >= lastStep;
   const analysis = {
-    observed: analyse(rounds.observed, networks.observed, step),
-    generated: analyse(rounds.generated, networks.generated, step),
+    observed: analyse(rounds.observed, networks.methods[sides[0]], step),
+    generated: analyse(rounds.generated, networks.methods[sides[1]], step),
   };
 
   // The log is rebuilt from the rounds rather than accumulated in state, so
@@ -129,8 +137,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
     step < 0
       ? []
       : Array.from({ length: step + 1 }, (_, index) => {
-          const forSeries = (series: Series) => {
-            const list = rounds[series];
+          const forSeries = (side: "observed" | "generated") => {
+            const list = rounds[side];
             const round = list[index];
             if (!round) return null;
             const running = round.failed.length;
@@ -159,6 +167,35 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
           />
         </label>
 
+        <fieldset className="border-0 p-0 m-0">
+          <legend className="text-sm mb-2">Run it against</legend>
+          <div className="flex flex-wrap gap-2">
+            {Object.values(networks.methods)
+              .filter((method) => method.key !== truth)
+              .map((method) => {
+                const active = method.key === comparison;
+                return (
+                  <button
+                    key={method.key}
+                    type="button"
+                    onClick={() => {
+                      setComparison(method.key);
+                      rewind();
+                    }}
+                    aria-pressed={active}
+                    className="border px-3 py-1 text-sm"
+                    style={{
+                      borderColor: active ? colours[method.key] : "var(--color-rule)",
+                      color: active ? colours[method.key] : "var(--color-ink)",
+                    }}
+                  >
+                    {method.label}
+                  </button>
+                );
+              })}
+          </div>
+        </fieldset>
+
         <div className="flex gap-3">
           <button
             type="button"
@@ -183,18 +220,21 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
           ? selected === null
             ? "Nothing has happened yet. Press run, or click any bank first to wipe that one out as well."
             : `Bank ${selected} will be wiped out completely, on top of the shock above. Press run.`
-          : `Round ${step + 1}. ${observed.failed.size} of ${total} banks have failed in the real system, ${generated.failed.size} of ${total} in the invented one.`}
+          : `Round ${step + 1}. ${observed.failed.size} of ${total} banks have failed in the real system, ${generated.failed.size} of ${total} in ${networks.methods[comparison].label.toLowerCase()}.`}
       </p>
 
       <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
-        {(["observed", "generated"] as Series[]).map((series) => {
-          const state = series === "observed" ? observed : generated;
+        {sides.map((key, index) => {
+          const state = index === 0 ? observed : generated;
+          const graph = networks.methods[key];
+          const dense = graph.edges.length / (total * (total - 1)) > 0.4;
           return (
-            <figure key={series} className="m-0">
+            <figure key={`${key}-${index}`} className="m-0">
               <NetworkPlot
-                graph={networks[series]}
-                series={series}
-                name={`${series} system`}
+                graph={graph}
+                colour={colours[key]}
+                edgeOpacity={dense ? 0.08 : index === 0 ? 0.34 : 0.42}
+                name={graph.label}
                 revealStartMs={0}
                 animate={false}
                 hoveredSlot={hoveredSlot}
@@ -204,10 +244,8 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
                 selected={selected}
                 onSelect={toggleSelected}
               />
-              <figcaption
-                className={`mt-3 ${series === "observed" ? "text-observed" : "text-generated"}`}
-              >
-                {series === "observed" ? "Observed system" : "Generated system"}
+              <figcaption className="mt-3" style={{ color: colours[key] }}>
+                {graph.label}
                 <span className="tabular text-stress ml-3">
                   {state.failed.size} of {total} failed
                 </span>
@@ -238,7 +276,9 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
                   )}
                   {entry.generated && (
                     <span className="block text-sm">
-                      <span className="text-generated">Invented system.</span>{" "}
+                      <span style={{ color: colours[comparison] }}>
+                        {networks.methods[comparison].label}.
+                      </span>{" "}
                       {entry.generated}
                     </span>
                   )}
@@ -256,7 +296,7 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
               )}
 
               <div>
-                <p className="text-observed text-sm">In the real system</p>
+                <p className="text-sm" style={{ color: colours[truth] }}>In {networks.methods[truth].label.toLowerCase()}</p>
                 {describeRun(analysis.observed, total).map((line) => (
                   <p key={line} className="mt-2 text-sm">
                     {line}
@@ -265,7 +305,7 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
               </div>
 
               <div>
-                <p className="text-generated text-sm">In the invented system</p>
+                <p className="text-sm" style={{ color: colours[comparison] }}>In {networks.methods[comparison].label.toLowerCase()}</p>
                 {describeRun(analysis.generated, total).map((line) => (
                   <p key={line} className="mt-2 text-sm">
                     {line}
