@@ -45,8 +45,10 @@ RESULTS = ROOT / "research" / "results"
 
 
 def panel(ax, points, ylabel, title) -> None:
-    for label, x, y, key in points:
+    for label, x, y, key, lo, hi in points:
         colour, marker = STYLE[key]
+        ax.errorbar(x, y, yerr=[[y - lo], [hi - y]], fmt="none", ecolor=colour,
+                    elinewidth=1.2, capsize=3, zorder=2)
         ax.scatter(x, y, s=80, c=colour, marker=marker, zorder=3, edgecolors=PAPER, linewidths=0.9)
         dx, dy = OFFSETS[key]
         ha = "right" if dx < 0 else "left"
@@ -71,12 +73,15 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=RESULTS / "figure_tradeoff.pdf")
     args = parser.parse_args()
 
-    data = json.loads((RESULTS / "baselines.json").read_text())
+    # Read the ensemble so the figure and the paper quote the same numbers.
+    data = json.loads((RESULTS / "ensemble.json").read_text())
     contagion, structure = [], []
     for key, entry in data["methods"].items():
-        recall = entry["reconstruction"]["edge_recall"]
-        contagion.append((entry["label"], recall, entry["behavioural"]["protocol_score"], key))
-        structure.append((entry["label"], recall, entry["behavioural"]["structure_score"], key))
+        recall = entry["edge_recall"]["mean"]
+        contagion.append((entry["label"], recall, entry["protocol_score"]["mean"], key,
+                          entry["protocol_score"]["lo"], entry["protocol_score"]["hi"]))
+        structure.append((entry["label"], recall, entry["structure_score"]["mean"], key,
+                          entry["structure_score"]["lo"], entry["structure_score"]["hi"]))
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.9))
     fig.patch.set_facecolor(PAPER)
@@ -85,7 +90,7 @@ def main() -> None:
     axes[1].set_yscale("log")
 
     # Mark the disagreement the paper is about.
-    by_key = {key: (x, y) for _, x, y, key in contagion}
+    by_key = {key: (x, y) for _, x, y, key, _lo, _hi in contagion}
     vae_x, vae_y = by_key["vae"]
     maxent_x, maxent_y = by_key["max_entropy"]
     axes[0].annotate(
@@ -94,7 +99,7 @@ def main() -> None:
     )
     axes[0].text(
         (vae_x + maxent_x) / 2, max(vae_y, maxent_y) + 0.012,
-        "same contagion error, 25x apart on edge recall",
+        "16x apart on edge recall; the blind model is the closer of the two",
         fontsize=8, color=STRESS, ha="center",
     )
 
@@ -105,7 +110,9 @@ def main() -> None:
 
     args.out.with_suffix(".txt").write_text(
         f"Edge-reconstruction accuracy against contagion realism and structural error. "
-        f"Seed {data['seed']}, {data['n_nodes']} banks, one sample per method. Contagion "
+        f"Seed {data['seed']}, {data['n_nodes']} banks, {data['samples_requested']} samples "
+        "per stochastic method (maximum entropy is deterministic). Bars are 95% bootstrap "
+        "intervals over samples. Contagion "
         "error is the mean relative gap over mean DebtRank, max DebtRank and mean cascade "
         "size; structural error is the mean relative gap over density, degree "
         "assortativity, mean exposure size and mean equity ratio (log scale). Maximum "
