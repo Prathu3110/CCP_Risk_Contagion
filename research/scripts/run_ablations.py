@@ -27,8 +27,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from ablation import DEFAULTS  # noqa: E402
 from dataset import build_batch, generate  # noqa: E402
-from evaluation import behavioural_error  # noqa: E402
-from generators import Network, sample_corpus  # noqa: E402
+import splits  # noqa: E402
+from evaluation import error_against, reference_statistics  # noqa: E402
+from generators import Network  # noqa: E402
 from gvae import GVAE, fit_latent_sampler, train  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,17 +46,20 @@ LABELS = {
 
 def variant(
     cfg: dict[str, Any],
-    observed: Network,
+    split: splits.Split,
+    reference: dict[str, float],
     ablations: dict[str, bool],
     seeds: int,
 ) -> dict[str, float]:
-    """Train once under these flags, sample several systems, average the scores."""
+    """Train once under these flags, sample several systems, average the scores.
+
+    Scored against the validation split. An ablation is a modelling decision, so
+    it must not be measured on the test networks.
+    """
     seed = int(cfg["seed"])
     torch.manual_seed(seed)
-    rng = np.random.default_rng(seed)
-    corpus = sample_corpus(cfg["network"], int(cfg["corpus"]["n_train"]), rng)
 
-    batch, scaler = build_batch(corpus, ablations)
+    batch, scaler = build_batch(split.train, ablations)
     model = GVAE(
         in_dim=batch.X.shape[-1],
         hidden_dim=int(cfg["gvae"]["hidden_dim"]),
@@ -63,17 +67,16 @@ def variant(
     )
     train(model, batch, cfg["gvae"], ablations)
     sampler = fit_latent_sampler(model, batch, float(cfg["gvae"]["latent_bandwidth"]), ablations)
-    density = float((observed.A > 0).sum()) / (observed.n * (observed.n - 1))
 
     protocol, debtrank, spread = [], [], []
     for index in range(seeds):
         net = generate(
             model, sampler, scaler, cfg["gvae"], cfg["network"],
-            target_density=density,
+            target_density=split.corpus_density,
             rng=np.random.default_rng(seed + index),
             ablations=ablations,
         )
-        scores = behavioural_error(observed, net, cfg["contagion"], seed)
+        scores = error_against(reference, net, cfg["contagion"], seed)
         protocol.append(scores["protocol_score"])
         debtrank.append(scores["gaps"]["mean_debtrank"])
         weights = net.A[net.A > 0]
@@ -92,29 +95,23 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, default=5)
     args = parser.parse_args()
 
-    cache = RESULTS / "networks.npz"
-    if not cache.exists():
-        raise SystemExit(f"{cache} not found. Run research/scripts/run_demo.py first.")
-    cached = np.load(cache)
-    observed = Network(
-        A=cached["observed_A"],
-        assets=cached["observed_assets"],
-        equity=cached["observed_equity"],
-        core=cached["observed_core"],
-    )
-
     cfg = yaml.safe_load(args.config.read_text())
     started = time.time()
+    split = splits.build(cfg)
+    reference = reference_statistics(split.validation, cfg["contagion"], int(cfg["seed"]))
+    observed_spread = float(
+        np.mean([np.log(net.A[net.A > 0]).std() for net in split.validation])
+    )
 
     print(f"Training the full model ({args.seeds} samples) ...")
-    full = variant(cfg, observed, dict(DEFAULTS), args.seeds)
+    full = variant(cfg, split, reference, dict(DEFAULTS), args.seeds)
 
     rows: list[dict[str, Any]] = []
     for flag in DEFAULTS:
         print(f"Retraining without: {LABELS[flag]} ...")
         flags = dict(DEFAULTS)
         flags[flag] = False
-        scores = variant(cfg, observed, flags, args.seeds)
+        scores = variant(cfg, split, reference, flags, args.seeds)
         rows.append({
             "flag": flag,
             "label": LABELS[flag],
@@ -127,7 +124,7 @@ def main() -> None:
         "seed": int(cfg["seed"]),
         "samples_per_variant": args.seeds,
         "full_model": full,
-        "observed_log_weight_std": float(np.log(observed.A[observed.A > 0]).std()),
+        "observed_log_weight_std": observed_spread,
         "rows": rows,
     }
 

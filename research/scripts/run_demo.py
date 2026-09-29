@@ -27,7 +27,8 @@ import export  # noqa: E402
 from contagion import cascade_size, debtrank  # noqa: E402
 from dataset import build_batch, generate  # noqa: E402
 from baselines import configuration_model, erdos_renyi, maximum_entropy  # noqa: E402
-from generators import Network, balance_sheet, sample_corpus, sample_network  # noqa: E402
+import splits  # noqa: E402
+from generators import Network, balance_sheet, sample_network  # noqa: E402
 from gvae import GVAE, fit_latent_sampler, train  # noqa: E402
 from layout import match_by_degree, spring_positions, total_degree  # noqa: E402
 
@@ -97,9 +98,16 @@ def main() -> None:
     rng = np.random.default_rng(seed)
     started = time.time()
 
-    print(f"Sampling {cfg['corpus']['n_train']} ground-truth networks ...")
-    corpus = sample_corpus(cfg["network"], int(cfg["corpus"]["n_train"]), rng)
-    observed = sample_network(cfg["network"], rng)  # held out from training
+    print("Building the train / validation / test split ...")
+    split = splits.build(cfg)
+    corpus = split.train
+    # The page shows one test network. Test networks are never used to choose
+    # anything; scripts/run_tuning.py does that on the validation split.
+    observed = split.test[0]
+    print(
+        f"  train {len(split.train)}  validation {len(split.validation)}  "
+        f"test {len(split.test)}, showing test network 1"
+    )
 
     training: dict[str, list[float]] = {"epochs": [], "loss": []}
     if args.skip_training:
@@ -123,7 +131,11 @@ def main() -> None:
             scaler,
             cfg["gvae"],
             cfg["network"],
-            target_density=density(observed.A),
+            # The training corpus density, not the density of the network the
+            # model is compared against. Taking it from `observed` would hand
+            # the generator a true statistic about its own evaluation target,
+            # which is the privileged access the baselines are criticised for.
+            target_density=split.corpus_density,
             rng=np.random.default_rng(int(cfg["gvae"]["sample_seed"])),
         )
 

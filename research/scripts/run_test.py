@@ -36,6 +36,8 @@ from baselines import (  # noqa: E402
 )
 from dataset import build_batch, generate  # noqa: E402
 from evaluation import (  # noqa: E402
+    cascade_profile,
+    reconstruction_error,
     debtrank_profile,
     error_against,
     reference_statistics,
@@ -52,6 +54,34 @@ LABELS = {
     "configuration": "Configuration model",
     "erdos_renyi": "Erdos-Renyi",
 }
+
+
+def write_web_evaluation(payload: dict[str, Any]) -> None:
+    """Ship the test scores to the page, which plots them as its hero."""
+    web = {
+        "seed": payload["seed"],
+        "samples": payload["samples_requested"],
+        "n_test_networks": payload["n_test_networks"],
+        "methods": {
+            key: {
+                "label": e["label"],
+                "sees": e["sees"],
+                "n_samples": e["n_samples"],
+                "edge_recall": e["edge_recall"],
+                "edge_f1": e["edge_f1"],
+                "frobenius_relative": e["frobenius_relative"],
+                "protocol_score": e["protocol_score"],
+                "structure_score": e["structure_score"],
+                "gaps": e["gaps"],
+                "ks_debtrank": e["ks_debtrank"],
+            }
+            for key, e in payload["methods"].items()
+        },
+    }
+    out = ROOT / "web" / "public" / "data" / "evaluation.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(web, indent=1) + "\n")
+    print(f"Wrote {out}")
 
 
 def main() -> None:
@@ -82,10 +112,34 @@ def main() -> None:
     train(model, batch, cfg["gvae"])
     sampler = fit_latent_sampler(model, batch, float(cfg["gvae"]["latent_bandwidth"]))
 
-    def score(nets: list, key: str) -> dict[str, Any]:
+    def cascade_band(curves: np.ndarray) -> dict[str, list[float]]:
+        bands = [bootstrap_ci(curves[:, i], seed=seed) for i in range(curves.shape[1])]
+        return {
+            "mean": [round(b["mean"], 5) for b in bands],
+            "lo": [round(b["lo"], 5) for b in bands],
+            "hi": [round(b["hi"], 5) for b in bands],
+        }
+
+    def score(nets: list, key: str, targets: list | None = None) -> dict[str, Any]:
+        """Score a method's outputs against the test reference.
+
+        `targets` pairs each output with the network it was built from, which
+        only the baselines have. The graph VAE has no particular target, so its
+        edge-level scores are averaged across every test network.
+        """
         protocol, structure, ks_p = [], [], []
+        curves: list[np.ndarray] = []
         per_metric: dict[str, list[float]] = {}
-        for net in nets:
+        recall, f1, frobenius = [], [], []
+        for index, net in enumerate(nets):
+            against = [targets[index]] if targets is not None else split.test
+            reconstructions = [reconstruction_error(t.A, net.A) for t in against]
+            recall.append(float(np.mean([r["edge_recall"] for r in reconstructions])))
+            f1.append(float(np.mean([r["edge_f1"] for r in reconstructions])))
+            frobenius.append(
+                float(np.mean([r["frobenius_relative"] for r in reconstructions]))
+            )
+            curves.append(cascade_profile(net, contagion_cfg, seed).mean(axis=1))
             result = error_against(reference, net, contagion_cfg, seed)
             protocol.append(result["protocol_score"])
             structure.append(result["structure_score"])
@@ -96,9 +150,13 @@ def main() -> None:
             "label": LABELS[key],
             "sees": INFORMATION_ACCESS[key],
             "n_samples": len(nets),
+            "edge_recall": bootstrap_ci(np.array(recall), seed=seed),
+            "edge_f1": bootstrap_ci(np.array(f1), seed=seed),
+            "frobenius_relative": bootstrap_ci(np.array(frobenius), seed=seed),
             "protocol_score": bootstrap_ci(np.array(protocol), seed=seed),
             "structure_score": bootstrap_ci(np.array(structure), seed=seed),
             "gaps": {n: bootstrap_ci(np.array(v), seed=seed) for n, v in per_metric.items()},
+            "cascade_curve": cascade_band(np.array(curves)),
             "ks_debtrank": {
                 "median_p": float(np.median(ks_p)),
                 "share_not_rejected_at_005": float(np.mean(np.array(ks_p) > 0.05)),
@@ -123,18 +181,35 @@ def main() -> None:
         "erdos_renyi": [erdos_renyi(net, seed + i) for i, net in enumerate(split.test)],
     }
 
+    shocks = np.linspace(
+        float(contagion_cfg["shock_min"]),
+        float(contagion_cfg["shock_max"]),
+        int(contagion_cfg["shock_steps"]),
+    )
+    test_cascade = np.array(
+        [cascade_profile(net, contagion_cfg, seed).mean(axis=1) for net in split.test]
+    ).mean(axis=0)
+
     payload: dict[str, Any] = {
         "seed": seed,
+        "samples_requested": args.samples,
+        "n_nodes": int(split.test[0].n),
+        "shock": [round(float(x), 4) for x in shocks],
+        "observed_cascade": [round(float(v), 5) for v in test_cascade],
         "n_test_networks": len(split.test),
         "corpus_density": split.corpus_density,
         "chosen": {
             k: cfg["gvae"][k] for k in ("weight_likelihood", "latent_bandwidth", "epochs")
         },
-        "methods": {key: score(nets, key) for key, nets in methods.items()},
+        "methods": {
+            key: score(nets, key, None if key == "vae" else split.test)
+            for key, nets in methods.items()
+        },
     }
 
     RESULTS.mkdir(parents=True, exist_ok=True)
     (RESULTS / "test.json").write_text(json.dumps(payload, indent=1) + "\n")
+    write_web_evaluation(payload)
 
     header = f"{'Method':<24}{'n':>4}{'protocol score':>24}{'structure':>11}{'KS p':>8}{'passes':>9}"
     print(f"\n{header}")

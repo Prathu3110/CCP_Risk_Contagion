@@ -131,6 +131,8 @@ export interface MethodEvaluation {
 export interface Evaluation {
   seed: number;
   samples: number;
+  /** Held-out systems, never used to choose anything. */
+  n_test_networks: number;
   methods: Record<MethodKey, MethodEvaluation>;
 }
 

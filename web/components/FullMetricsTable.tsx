@@ -66,7 +66,7 @@ const ROWS: { key: GapMetric | "edge_recall" | "edge_f1" | "frobenius_relative";
     key: "mean_equity_ratio",
     label: "Capital held per bank",
     meaning:
-      "Capital as a share of what a bank owns. The three reconstruction methods inherit the real balance sheets, so they score a perfect zero here by construction, not by merit.",
+      "Capital as a share of what a bank owns. The three reconstruction methods inherit the balance sheets of the network they were handed, so their small gap here is inherited rather than earned.",
     group: "What the network looks like",
   },
 ];
@@ -154,11 +154,12 @@ export default function FullMetricsTable({
         </tbody>
       </table>
       <p className="mt-3 text-sm text-ink/60 max-w-[68ch]">
-        Averaged over {evaluation.samples} generated systems per method, except maximum
-        entropy, which is deterministic and produces one. Every cell except the first two
-        rows is a gap against the simulated ground truth, so lower is better; the best
-        value in each row is set in bold. The first two rows are shares, where higher is
-        better.
+        Scored on {evaluation.n_test_networks} held-out test systems that nothing in this
+        project was tuned against. Our model is averaged over {evaluation.samples}{" "}
+        generated systems; each reconstruction method is given every test system in turn.
+        Every cell except the first two rows is a gap against those test systems, so lower
+        is better, and the best value in each row is set in bold. The first two rows are
+        shares, where higher is better.
       </p>
     </div>
   );

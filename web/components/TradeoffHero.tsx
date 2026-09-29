@@ -191,10 +191,12 @@ export default function TradeoffHero({ networks, evaluation }: Props) {
         </svg>
 
         <p className="mt-4 text-sm text-ink/70 max-w-[52ch]">
-          Each dot is a way of building a fake banking network. Bars show the range
-          across {evaluation.samples} attempts. If recovering the real links told you
-          anything about how a crisis behaves, the dots would fall on a line. They do
-          not.
+          Each dot is a way of building a fake banking network, scored on systems
+          nothing here was tuned against. Bars show the range across attempts:{" "}
+          {evaluation.samples} for our model, which can generate as many as you like, and
+          one per test system for the methods that have to be handed a network first. If
+          recovering the real links told you anything about how a crisis behaves, the dots
+          would fall on a line. They do not.
         </p>
       </div>
 

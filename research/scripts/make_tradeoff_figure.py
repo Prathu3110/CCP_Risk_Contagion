@@ -75,7 +75,7 @@ def main() -> None:
     args = parser.parse_args()
 
     figstyle.apply()
-    data = json.loads((RESULTS / "ensemble.json").read_text())
+    data = json.loads((RESULTS / "test.json").read_text())
 
     contagion, structure = [], []
     for key, entry in data["methods"].items():

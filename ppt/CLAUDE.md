@@ -38,92 +38,97 @@ still misses, so the protocol is doing real work.
 
 ## 3. Verified numbers — use these exactly
 
-All from the committed seeded run. Seed 20260915, 60 banks, 300 training
-networks, 300 epochs, 16-dim latent. 20 samples per stochastic method; maximum
-entropy is deterministic and contributes 1.
+All from the committed run. Seed 20260915, 60 banks. **The data is split: 300
+training networks, 20 validation, 5 test.** The model fits train, every setting
+was chosen on validation, and the 5 test networks were scored once. Nothing here
+was tuned against the numbers below.
+
+Our model is averaged over 20 generated systems. Each baseline is given every
+test network to reconstruct, so it contributes 5.
 
 ### Headline table
 
-| Method | Links recovered | Crisis-behaviour error | Structural error | Passes KS test | What it is told |
+| Method | Links recovered | Contagion error | Structural error | Passes KS | What it is told |
 |---|---|---|---|---|---|
-| Our model (graph VAE) | 0.064 | **0.123** [0.092, 0.157] | 0.091 | **19 of 20** | nothing |
-| Maximum entropy | **1.000** | 0.205 | 3.214 | **0 of 1** | true row and column totals |
-| Configuration model | 0.364 | 0.089 [0.072, 0.107] | 0.022 | 20 of 20 | true degree sequence + weight multiset |
-| Erdős–Rényi | 0.075 | 0.397 [0.351, 0.443] | 0.250 | 0 of 20 | true density |
+| Configuration model | 0.372 | **0.102** [0.087, 0.119] | 0.060 | 4 of 5 | true degree sequence + weight multiset |
+| Our model (graph VAE) | 0.089 | 0.140 [0.099, 0.198] | 0.067 | **14 of 20** | nothing |
+| Maximum entropy | **1.000** | 0.218 [0.191, 0.240] | 3.012 | **0 of 5** | true row and column totals |
+| Erdős–Rényi | 0.085 | 0.619 [0.402, 0.875] | 0.268 | 0 of 5 | true density |
 
-**The money line:** maximum entropy recovers 100% of links and is still told
-apart from the real system by the behavioural test (p < 0.001). Our model
-recovers 6% and passes 19 of 20.
+**The money line:** maximum entropy recovers 100% of links and its distribution
+of dangerous banks is still told apart from the truth on every test network
+(p ≈ 7e-15). Our model recovers 9% and survives 14 of 20.
 
-**Do not overstate this.** Maximum entropy is deterministic, so it contributes
-one sample and therefore one KS test, not twenty. The test is decisive on its
-own (p is effectively zero), but "fails every time" implies repeated trials that
-do not exist.
+**Do not oversell the model. It is best at nothing.** Per metric: second on mean
+DebtRank, third on max DebtRank, third on mean cascade size. Second of four
+overall. It beats both methods that could actually be used in its place, and
+loses to one that is handed the network and reshuffles it. Say that, not "our
+model wins".
 
-**Do not oversell the model either.** It is not best on any single crisis
-measure: second on mean DebtRank, third on max DebtRank, fourth and last on
-cascade size. Its aggregate lead over maximum entropy and Erdos-Renyi comes
-almost entirely from mean DebtRank, where those two are catastrophic (0.556 and
-0.807 against our 0.150). Strip that measure out and the lead disappears. The
-honest claim is: second of four overall, beats both usable alternatives, loses
-to a method that is handed the answer.
-
-**The KS test direction is inverted and must be explained on the slide.** A
-*high* p-value is the good outcome: it means the generated distribution of
-systemic importance cannot be told apart from the truth. Say this out loud or it
-reads as an error.
-
-### Per-metric gaps (relative gap vs ground truth, lower is better)
+### Per-metric gaps (relative gap vs the test networks, lower is better)
 
 | Metric | Our model | Max entropy | Configuration | Erdős–Rényi |
 |---|---|---|---|---|
-| Mean DebtRank | 0.150 | 0.556 | 0.097 | 0.807 |
-| Max DebtRank | 0.151 | 0.054 | 0.108 | 0.344 |
-| Mean cascade size | 0.066 | 0.007 | 0.062 | 0.041 |
-| Edge density | 0.030 | **10.942** | 0.001 | 0.050 |
-| Degree assortativity | 0.205 | 0.998 | 0.085 | 0.899 |
-| Mean exposure size | 0.102 | 0.916 | 0.001 | 0.052 |
-| Mean equity ratio | 0.025 | 0.000 | 0.000 | 0.000 |
+| Mean DebtRank | 0.190 | 0.541 | 0.153 | 1.336 |
+| Max DebtRank | 0.188 | 0.079 | 0.104 | 0.478 |
+| Mean cascade size | 0.042 | 0.033 | 0.050 | 0.041 |
+| Edge density | 0.044 | **10.126** | 0.027 | 0.043 |
+| Degree assortativity | 0.102 | 0.999 | 0.143 | 0.947 |
+| Mean exposure size | 0.096 | 0.910 | 0.057 | 0.068 |
+| Mean equity ratio | 0.024 | 0.014 | 0.014 | 0.014 |
+
+Edge-level scores: recall / F1 / relative Frobenius are 0.089 / 0.091 / 1.336
+for our model, 1.000 / 0.165 / 0.907 for maximum entropy, 0.372 / 0.375 / 1.217
+for the configuration model, 0.085 / 0.085 / 1.399 for Erdős–Rényi.
 
 Two caveats that belong on the slide if this table is shown:
-- Maximum entropy has the **smallest** cascade-size gap (0.007). Cascade size
-  alone does not separate the methods; the DebtRank distribution does.
-- The equity-ratio zeros are free. Three methods inherit the real balance
-  sheets, so they cannot miss.
+- Maximum entropy has the **smallest** cascade-size gap. Cascade size does not
+  separate the methods; the DebtRank distribution does.
+- Maximum entropy's 10.1x density gap is why its structural error is 3.012. Its
+  network is 93% dense against a true 8%.
 
-### Our model against the ground truth (structural)
+### The leak we found and closed — worth a slide
 
-| Statistic | Ground truth | Our model | Gap |
-|---|---|---|---|
-| Mean degree | 9.23 | 9.63 | 4.3% |
-| Edge count | 277 | 289 | 4.3% |
-| Density | 0.0782 | 0.0816 | 4.3% |
-| Mean exposure | 0.0397 | 0.0412 | 3.8% |
-| Mean equity ratio | 0.0813 | 0.0837 | 2.9% |
-| Degree assortativity | −0.359 | −0.424 | 18.1% |
-| Max degree | 49 | 59 | 20.4% |
+The first version of this project did two things that would not have survived
+review, and finding them is a result in itself.
 
-### Ablations (5 samples per variant)
+1. The generator was handed the **true density of the network it was scored
+   against**, to calibrate its edge threshold. That is exactly the privileged
+   access the paper criticises maximum entropy for. It now uses the mean density
+   of the training networks (0.0827) instead of the evaluation network's true
+   value.
+2. `latent_bandwidth` was chosen by comparing contagion gaps **against the same
+   network the results were then reported on**. Selection on the test set.
 
-Full model: crisis-behaviour error 0.147, log-weight spread 0.739. Ground-truth
-spread is 0.825.
+Closing both moved our model from 0.123 to 0.140. The ordering did not change.
+Report the honest number and say why it went up.
+
+### Ablations (validation split, 5 samples per variant)
+
+Full model: contagion error 0.109, log-weight spread 0.735. Validation target
+spread is 0.780.
 
 | Choice switched off | Error | Change | Log-weight spread |
 |---|---|---|---|
-| Keep top edges, not sampled | 0.249 | **+0.101** | 0.654 |
-| Model equity, not the ratio | 0.207 | +0.060 | 0.736 |
-| Sample from the prior | 0.197 | +0.049 | **1.232** |
-| Squared error, not sampled | 0.166 | +0.019 | **0.363** |
-| No balance-sheet scaling | 0.141 | **−0.007** | 0.739 |
+| Sample from the prior | 0.244 | **+0.135** | 1.108 |
+| Keep top edges, not sampled | 0.227 | +0.118 | 0.660 |
+| Squared error, not sampled | 0.190 | +0.082 | 0.400 |
+| Model equity, not the ratio | 0.166 | +0.057 | 0.743 |
+| No balance-sheet scaling | 0.134 | +0.025 | 0.735 |
 
-Four of five earn their place. **The fifth is a negative result and stays on the
-slide.** Balance-sheet scaling changes the score by −0.007, inside noise. The
-flag can only disable decoder-side rescaling; disabling it in the ground-truth
-sampler would change the target. The test does not reach the original claim.
+**All five earn their place.** An earlier run scored these against a single
+network and reported that balance-sheet scaling was worth nothing; that was an
+artefact of judging a generator on one draw. Best mechanism story: squared error
+pushes the exposure spread down to 0.400 and prior sampling pushes it up to
+1.108, against a target of 0.780. Opposite distortions, both wrong.
 
-Best mechanism story: squared error drives exposure spread down to 0.363 and
-prior sampling drives it up to 1.232, against a truth of 0.825. Opposite
-distortions, both wrong.
+### The negative result worth a slide
+
+A Student-t weight head was added specifically to fix the thin exposure tail,
+which is the diagnosed cause of the DebtRank gap. **It fixes the tail and still
+scores worse.** Spread 0.788 against a validation target of 0.780, where
+Gaussian gives 0.735 — and worse contagion at every bandwidth tried. Matching
+the weight distribution is not sufficient for matching contagion behaviour.
 
 ### Ground truth stylized facts
 
@@ -145,16 +150,11 @@ barely faces itself, three quarters of links touch a core bank.
 ### Simulator behaviour (measured, safe to state)
 
 - Below ~7% shock nothing fails; capital absorbs it.
-- 8–15%: the system tips over. At 10%, 6 of 6 core banks fail in the ground
-  truth against 2 of 6 in our model.
-- Past ~15%: direct failures plateau at 31 while contagion keeps climbing. Extra
-  shock then kills only through the network.
+- 8–15%: the system tips over.
+- Past ~15%: direct failures plateau while contagion keeps climbing. Extra shock
+  then kills only through the network.
 - No single bank is contagious on its own — wiping out any one of the 60 fails
-  only itself, in both systems.
-- 2 of 60 ground-truth banks owe nobody and so can never default in
-  Eisenberg–Noe by construction.
-
----
+  only itself.
 
 ## 4. Figures — use these, do not redraw
 
@@ -175,14 +175,19 @@ files above are missing, regenerate them. The pipeline is seeded, so the numbers
 come out identical to the ones in this file:
 
 ```bash
-cd .. && python3 research/scripts/run_demo.py          # ~30s, writes networks.npz
-python3 research/scripts/run_baselines.py              # ~3min, ensemble.json
-python3 research/scripts/run_ablations.py              # ~3min, ablations.json
-python3 research/scripts/stylized_facts.py             # instant
+cd .. && python3 research/scripts/run_demo.py     # ~60s, web display data
+python3 research/scripts/run_test.py              # ~70s, results/test.json (figures need this)
+python3 research/scripts/run_ablations.py         # ~6min, ablations.json
+python3 research/scripts/stylized_facts.py        # instant
 python3 research/scripts/make_tradeoff_figure.py
 python3 research/scripts/make_ensemble_figure.py
 python3 research/scripts/make_figure.py
 ```
+
+`run_test.py` must run before the two figure scripts, which read
+`results/test.json`. Do **not** run `run_tuning.py` unless you intend to redo
+hyperparameter selection; it takes about nine minutes and only touches the
+validation split.
 
 If any number you generate disagrees with section 3, stop and say so rather than
 using the new one. Output is meant to be byte-identical across runs.

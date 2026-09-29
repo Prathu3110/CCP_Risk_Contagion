@@ -33,7 +33,7 @@ def main() -> None:
     args = parser.parse_args()
 
     figstyle.apply()
-    data = json.loads((RESULTS / "ensemble.json").read_text())
+    data = json.loads((RESULTS / "test.json").read_text())
     shocks = data["shock"]
 
     fig, ax = plt.subplots(figsize=(figstyle.SINGLE_COLUMN, figstyle.SINGLE_COLUMN * 0.78))

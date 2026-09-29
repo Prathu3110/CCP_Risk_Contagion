@@ -53,12 +53,21 @@ CCP-DEMO-BUILD-PLAN.md   the original brief this was built from
 ## Commands
 
 ```bash
-python3 research/scripts/run_demo.py          # train + write the 3 JSON files (~30s CPU)
-python3 research/scripts/run_demo.py --skip-training   # fallback: sampler instead of the model
-python3 research/scripts/make_figure.py       # results/figure1.png + .pdf
-npm --prefix web run dev                      # http://localhost:3000
-npm --prefix web run build                    # must stay fully static
+python3 research/scripts/run_demo.py       # web display data: networks, metrics, contagion
+python3 research/scripts/run_tuning.py     # hyperparameter grid, VALIDATION only (~9 min)
+python3 research/scripts/run_test.py       # scores every method on TEST, writes evaluation.json
+python3 research/scripts/run_ablations.py  # ablations, VALIDATION only (~6 min)
+python3 research/scripts/stylized_facts.py # docs/calibration.md
+python3 research/scripts/make_tradeoff_figure.py   # reads results/test.json
+python3 research/scripts/make_ensemble_figure.py   # reads results/test.json
+python3 research/scripts/make_figure.py            # six-panel figure
+npm --prefix web run dev                   # http://localhost:3000
+npm --prefix web run build                 # must stay fully static
 ```
+
+Order matters: `run_test.py` must run before the two figure scripts that read
+`results/test.json`. `run_demo.py --skip-training` is still the fallback that
+replaces the model with the sampler.
 
 Environment: system Python 3.13 with torch 2.9, numpy, networkx, PyYAML, scipy,
 matplotlib (see `research/requirements.txt`). No virtualenv is in use, but
@@ -155,26 +164,61 @@ Latents are sampled from a kernel estimate of the aggregate posterior, not the
 N(0, I) prior — the latent cloud is bimodal (core vs periphery banks) and a
 single Gaussian puts most of its mass in the empty space between the modes.
 
+## The split, and why it is not optional
+
+`research/src/splits.py` draws 300 training, 20 validation and 5 test networks
+from the one seed. The rule:
+
+- **train** — the model fits these.
+- **validation** — every hyperparameter, ablation and modelling decision is
+  measured here. `scripts/run_tuning.py` and `scripts/run_ablations.py` see only
+  this split.
+- **test** — `scripts/run_test.py` scores it once, at the end. **Never select
+  anything on it.**
+
+Two leaks were removed to get here and must not come back:
+
+1. The generator was passed `density(observed.A)` — the true density of the
+   network it was scored against. It now takes `split.corpus_density`, the mean
+   density of the training networks. Handing it any statistic of the evaluation
+   target is the privileged access the baselines are criticised for.
+2. `latent_bandwidth` was chosen by comparing contagion gaps against the single
+   evaluation network. That is selection on the test set.
+
+`scripts/run_baselines.py` was deleted rather than fixed: it scored against a
+single held-out network and would reintroduce both faults if anyone ran it.
+
 ## Current results
 
-From the committed seeded run, generated against observed:
+Test split, 5 held-out networks, nothing tuned against them. Our model is
+averaged over 20 generated systems; each baseline reconstructs every test
+network.
 
-| Statistic | Gap |
-| --- | --- |
-| Mean equity ratio | 2.9% |
-| Mean exposure size | 3.8% |
-| Edge density | 4.3% |
-| Mean cascade size | 6.6% |
-| Degree assortativity | 18.1% |
-| Max degree | 20.4% |
-| **Mean DebtRank** | **37.1%** |
+| Method | Links recovered | Contagion error | Structural error | Passes KS |
+| --- | --- | --- | --- | --- |
+| Configuration model | 0.372 | **0.102** | 0.060 | 4/5 |
+| Our model (graph VAE) | 0.089 | 0.140 | 0.067 | 14/20 |
+| Maximum entropy | **1.000** | 0.218 | 3.012 | 0/5 |
+| Erdős–Rényi | 0.085 | 0.619 | 0.268 | 0/5 |
 
-Mean DebtRank is the honest weak point, not noise — it held across a four-way
-sweep of bandwidth, epochs and KL weight. The generated upper tail of exposures
-is still thinner than ground truth, so the typical bank looks less systemic than
-it is. **It is documented in the README, in `docs/method.md`, in the page's "What
-this does not do yet" section, and in the caption of the chart that shows it. Do
-not quietly tune it away or drop the disclosure.**
+Our model is **second of four and best on nothing**. Per metric it is second on
+mean DebtRank (0.190), third on max DebtRank (0.188) and third on mean cascade
+size (0.042). It beats both methods that could be used in its place and loses to
+one that is handed the network to reshuffle. Do not describe it as winning.
+
+Closing the leaks moved it from 0.123 to 0.140. That is the leak being removed,
+not a regression, and the ordering did not change.
+
+Mean DebtRank is the honest weak point. **It is documented in the README, in
+`docs/method.md`, in the page's "What this does not do yet" section, and in the
+caption of the chart that shows it. Do not quietly tune it away or drop the
+disclosure.**
+
+A Student-t weight head was tried against it. It fixes the exposure tail
+(log-weight spread 0.788 against a validation target of 0.780, where Gaussian
+gives 0.735) and still scores worse on contagion at every bandwidth. Matching the
+weight distribution is not sufficient for matching contagion behaviour. The
+option stays in the config, switched off.
 
 Pipeline output is byte-identical across runs. If a change makes it non-reproducible,
 that is a bug.

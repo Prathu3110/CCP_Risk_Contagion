@@ -163,13 +163,28 @@ export default function Page() {
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
           How well each method does on both tests
         </h2>
-        <p className="mt-5 max-w-[62ch]">
-          Every stochastic method was run {evaluation.samples} times. The crisis-behaviour
-          test compares how much damage each bank can do, how much the worst one can do, and
-          how many banks fail across a sweep of shocks. The last column asks whether a
-          statistical test can tell the fake system&rsquo;s pattern of dangerous banks apart
-          from the real one&rsquo;s.
-        </p>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            The crisis-behaviour test compares how much damage each bank can do, how much
+            the worst one can do, and how many banks fail across a sweep of shocks. The
+            last column asks whether a statistical test can tell the fake system&rsquo;s
+            pattern of dangerous banks apart from the real one&rsquo;s.
+          </p>
+          <p>
+            These numbers come from {evaluation.n_test_networks} systems that nothing here
+            was tuned against. The model is fitted on 300 systems, every setting was chosen
+            against 20 more, and these last {evaluation.n_test_networks} were scored once,
+            at the end. An earlier version of this project skipped that separation and
+            chose settings against the same system it then reported on, which flattered our
+            model by about 0.02 on this scale.
+          </p>
+          <p>
+            The same fix removed something worse. The generator used to be handed the true
+            density of the system it was being judged on. That is the privileged access we
+            criticise the other methods for, so it now takes its target density from the
+            training systems instead.
+          </p>
+        </div>
         <div className="mt-8">
           <ProtocolTable evaluation={evaluation} colours={colours} order={order} />
         </div>
@@ -222,8 +237,8 @@ export default function Page() {
           </p>
           <p>
             Take the three crisis measures one at a time. On damage the average bank can
-            do it is second. On damage the worst bank can do it is third. On how many
-            banks fail it is fourth, which is to say last. Averaging those gives{" "}
+            do it is second of four. On damage the worst bank can do it is third. On how
+            many banks fail it is third. Averaging those gives{" "}
             <span className="tabular">{model.protocol_score.mean.toFixed(3)}</span>,
             against{" "}
             <span className="tabular">{dense.protocol_score.mean.toFixed(3)}</span> for the
@@ -633,11 +648,12 @@ export default function Page() {
           <AblationTable ablations={ablations} />
         </div>
         <p className="mt-6 max-w-[62ch]">
-          Four of the five earn their place. The last one does not: removing it changes
-          nothing we can distinguish from noise. It was added for a reason that applies to
-          how the ground truth is built rather than how the model decodes, so this test
-          does not really reach it, and we leave the row in rather than quietly dropping a
-          result that did not go our way.
+          All five earn their place, and the weakest of them is instructive. An earlier
+          version of this table scored each variant against a single network and reported
+          that balance-sheet scaling was worth nothing. Scored against twenty validation
+          networks instead, it is worth a clear amount. The first result was an artefact
+          of judging a generator on one draw, which is the same mistake this project spent
+          a stage removing elsewhere.
         </p>
       </section>
 

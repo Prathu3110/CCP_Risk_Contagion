@@ -110,26 +110,41 @@ docs/method.md          the maths, with the equations and the citations
 
 ## Results
 
-From one seeded run, generated against observed:
+The data is split three ways: 300 networks to train on, 20 to choose settings
+against, and 5 held out and scored once. Nothing below was tuned against these
+numbers.
 
-| Statistic | Gap |
-| --- | --- |
-| Edge density | 4.3% |
-| Mean exposure size | 3.8% |
-| Mean equity ratio | 2.9% |
-| Degree assortativity | 18.1% |
-| Mean cascade size | 6.6% |
-| Mean DebtRank | 37.0% |
+| Method | Links recovered | Contagion error | Structural error | Passes KS |
+| --- | --- | --- | --- | --- |
+| Configuration model | 0.372 | **0.102** | 0.060 | 4 of 5 |
+| Our model (graph VAE) | 0.089 | 0.140 | 0.067 | **14 of 20** |
+| Maximum entropy | **1.000** | 0.218 | 3.012 | 0 of 5 |
+| Erdős–Rényi | 0.085 | 0.619 | 0.268 | 0 of 5 |
 
-The last row is the honest weak point, not a rounding error. See below.
+The claim in one row: maximum entropy recovers **every** real link and its
+distribution of dangerous banks is still told apart from the truth on every test
+network. Our model recovers 9% and survives 14 of 20.
+
+Our model is **second of four and best on no individual measure** — second on
+mean DebtRank, third on max DebtRank, third on mean cascade size. It beats both
+methods that could be used in its place, and loses to one that is handed the
+network and reshuffles it, which cannot generate anything on its own.
+
+Two faults were found and fixed to get these numbers, and both made the earlier
+version look better than it was. The generator had been handed the true density
+of the network it was scored against, and the kernel bandwidth had been chosen
+against that same network. Closing both moved our score from 0.123 to 0.140. The
+ordering did not change.
 
 ## What this does not do yet
 
 - The observed system is itself simulated. Real supervisory data is not wired
   in, so this shows the method works, not that it works on the real thing.
-- Mean DebtRank comes out about a third below the observed system's: the model
-  still does not produce quite enough very large single exposures, so the
-  typical bank looks less systemic than it really is.
+- Mean DebtRank is the weak point: our gap is 0.190 where the configuration
+  model manages 0.153. The model still does not produce quite enough very large
+  single exposures, so the typical bank looks less systemic than it really is.
+  A Student-t weight head was tried against this. It fixes the exposure tail and
+  still scores worse on contagion, which is reported rather than buried.
 - There is no central counterparty and no default waterfall. That is the next
   milestone and the part that matters most for clearing risk.
 - Everything here is 60 banks. A national system is thousands, and the dense
