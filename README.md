@@ -12,8 +12,25 @@ Across a sweep of shocks from 5% to 50%, the cascade curves of the observed and
 generated systems agree to within about 7%.
 
 The page is not just a report of that result. It ends with a crisis you run
-yourself: pick how hard to hit the system, or wipe out a single bank, and watch
-the failures spread round by round through both networks at once.
+yourself: pick how hard to hit the system, watch the failures spread round by
+round through both networks at once, and read an account of what happened that
+is written from the numbers that run actually produced. A gentle shock and a
+severe one get genuinely different explanations, because they are genuinely
+different events:
+
+- **Below about 7%** nothing fails. Every bank absorbs the loss out of its own
+  capital.
+- **Between 8% and 15%** the system tips over, and the two systems can disagree
+  about which banks go first. At 10% every one of the six largest banks fails in
+  the real system against two of six in the invented one.
+- **Past 25%** direct failures stop growing while contagion keeps climbing:
+  those banks' buffers are already exhausted, so extra shock kills only through
+  the network. At 30% the two systems land within a bank of each other, both
+  losing about 20 banks to contagion alone.
+
+No single bank is contagious on its own in this calibration — wiping out any one
+of the 60 fails only itself. That is why the summary charts shock every bank at
+once, and the page says so rather than implying otherwise.
 
 ## Reproduce
 

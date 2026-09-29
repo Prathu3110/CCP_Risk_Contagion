@@ -214,6 +214,11 @@ decimal places.
 
 The browser version additionally returns the state after every round, since the
 point on the page is to watch a failure spread rather than be told the total.
+`web/lib/analysis.ts` turns those rounds into prose. Every sentence it produces
+is derived from that run's own numbers rather than selected by a hardcoded
+threshold, so the account cannot drift out of step with what the model did:
+a run in which nothing fails, one in which failures are all direct, and one
+carried by contagion each take a different branch.
 For Eisenberg–Noe those rounds are not a presentational device: each pass of the
 fictitious default algorithm is one genuine round of the cascade, so banks that
 go red in round 1 were sunk by the shock itself and everyone after them was

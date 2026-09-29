@@ -50,6 +50,32 @@ export default function Page() {
 
       <section className="border-t border-rule py-12 lg:py-16">
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          How to read the two pictures
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            A dot is a bank. A line between two dots means one of them owes the other
+            money, and the thicker the line, the larger the debt. The bigger the dot, the
+            bigger the bank.
+          </p>
+          <p>
+            Position is not decoration. Both drawings use the same set of positions,
+            handed out by how many counterparties a bank has, so the busiest bank in each
+            system sits in the same place. That is what makes them comparable at a glance:
+            the same spot means the same job in the system, not the same institution.
+            Point at any bank and its counterparties light up in both at once.
+          </p>
+          <p>
+            What you should see is a dense knot in the middle and a thin scattering around
+            the edge. That is the shape real interbank markets have: a few large banks that
+            deal with almost everybody, and many small ones that deal mainly with the large
+            ones. The model was never told to produce that. It worked it out from examples.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
           Why anyone would invent this data
         </h2>
         <div className="mt-5 max-w-[62ch] space-y-4">
@@ -69,6 +95,15 @@ export default function Page() {
           <p>
             The test used here is behavioural. Push both systems into a crisis and see
             whether the crisis travels the same distance.
+          </p>
+          <p>
+            If that works, the invented networks are usable wherever the real ones cannot
+            go. A researcher with no access to supervisory data can develop and compare
+            stress tests on them. A regulator can hand out a realistic network to
+            outsiders without disclosing anything about actual banks. And because the
+            generator produces as many systems as you like, a policy can be tested against
+            a thousand plausible banking systems instead of the single one that happens to
+            exist.
           </p>
         </div>
       </section>
@@ -174,15 +209,25 @@ export default function Page() {
         </h2>
         <div className="mt-5 max-w-[62ch] space-y-4">
           <p>
-            The curve above is a summary of runs like this one. Here the same model
-            runs live: choose how hard to hit the system and watch it fail, round by
-            round, in both systems at once. A bank turns red at the moment it can no
+            Every point on the curve above is an average of runs like this one. Here the
+            same calculation runs live, at whatever shock you choose: watch both systems
+            fail round by round, side by side. A bank turns red the moment it can no
             longer pay what it owes, and the debts it will not repay turn red with it.
           </p>
           <p>
             Each round is one pass of the clearing calculation. Banks that fail in the
             first round were sunk by the shock itself. Everyone who fails after that was
-            brought down by the failures before them, which is the part worth watching.
+            brought down by the failures before them, and that second group is the whole
+            reason the network matters: you could never find them by reading one bank
+            &rsquo;s balance sheet on its own.
+          </p>
+          <p>
+            Three settings are worth trying, because they behave quite differently. Below
+            about 7% nothing fails at all. Between 8% and 15% the system tips over, and
+            the two systems can disagree about which banks go first. Past 25% the direct
+            damage stops growing and almost every new failure comes through the network
+            instead. A written account of what happened appears underneath once a run
+            finishes.
           </p>
         </div>
 

@@ -3,6 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import NetworkPlot from "@/components/NetworkPlot";
+import {
+  analyse,
+  compare,
+  describeRound,
+  describeRun,
+  describeSingleBank,
+} from "@/lib/analysis";
 import { cascadeRounds, toBalance, type CascadeRound } from "@/lib/contagion";
 import type { Networks, Series } from "@/lib/types";
 
@@ -110,6 +117,28 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
   const generated = stateFor("generated");
   const total = networks.n_nodes;
 
+  const settled = step >= lastStep;
+  const analysis = {
+    observed: analyse(rounds.observed, networks.observed, step),
+    generated: analyse(rounds.generated, networks.generated, step),
+  };
+
+  // The log is rebuilt from the rounds rather than accumulated in state, so
+  // scrubbing or re-running can never leave a stale entry behind.
+  const log =
+    step < 0
+      ? []
+      : Array.from({ length: step + 1 }, (_, index) => {
+          const forSeries = (series: Series) => {
+            const list = rounds[series];
+            const round = list[index];
+            if (!round) return null;
+            const running = round.failed.length;
+            return describeRound(index, round.newlyFailed.length, running);
+          };
+          return { index, observed: forSeries("observed"), generated: forSeries("generated") };
+        }).filter((entry) => entry.observed || entry.generated);
+
   return (
     <div>
       <div className="flex flex-wrap items-end gap-x-8 gap-y-5">
@@ -152,9 +181,9 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
       <p className="mt-5 text-sm text-ink/70 min-h-6" aria-live="polite">
         {step < 0
           ? selected === null
-            ? "Nothing has happened yet. Press run, or click any bank to wipe out that one bank on its own."
-            : `Bank ${selected} will be wiped out completely. Press run to see who it takes with it.`
-          : `Round ${step + 1}. ${observed.failed.size} of ${total} banks have failed in the observed system, ${generated.failed.size} of ${total} in the generated one.`}
+            ? "Nothing has happened yet. Press run, or click any bank first to wipe that one out as well."
+            : `Bank ${selected} will be wiped out completely, on top of the shock above. Press run.`
+          : `Round ${step + 1}. ${observed.failed.size} of ${total} banks have failed in the real system, ${generated.failed.size} of ${total} in the invented one.`}
       </p>
 
       <div className="mt-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
@@ -187,6 +216,75 @@ export default function CrisisSimulator({ networks }: { networks: Networks }) {
           );
         })}
       </div>
+
+      {step >= 0 && (
+        <div className="mt-10 border-t border-rule pt-8">
+          <h3 className="font-display font-semibold tracking-tight text-lg">
+            What is happening
+          </h3>
+
+          <ol className="mt-4 space-y-3 max-w-[62ch]">
+            {log.map((entry) => (
+              <li key={entry.index} className="grid grid-cols-[auto_1fr] gap-x-4">
+                <span className="tabular text-sm text-ink/50 pt-0.5">
+                  {String(entry.index + 1).padStart(2, "0")}
+                </span>
+                <span className="space-y-1">
+                  {entry.observed && (
+                    <span className="block text-sm">
+                      <span className="text-observed">Real system.</span>{" "}
+                      {entry.observed}
+                    </span>
+                  )}
+                  {entry.generated && (
+                    <span className="block text-sm">
+                      <span className="text-generated">Invented system.</span>{" "}
+                      {entry.generated}
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          {settled && (
+            <div className="mt-8 space-y-6 max-w-[62ch]">
+              {selected !== null && (
+                <p className="text-sm">
+                  {describeSingleBank(selected, analysis.observed, shock > 0)}
+                </p>
+              )}
+
+              <div>
+                <p className="text-observed text-sm">In the real system</p>
+                {describeRun(analysis.observed, total).map((line) => (
+                  <p key={line} className="mt-2 text-sm">
+                    {line}
+                  </p>
+                ))}
+              </div>
+
+              <div>
+                <p className="text-generated text-sm">In the invented system</p>
+                {describeRun(analysis.generated, total).map((line) => (
+                  <p key={line} className="mt-2 text-sm">
+                    {line}
+                  </p>
+                ))}
+              </div>
+
+              <div className="border-t border-rule pt-6">
+                <p className="text-sm">So what does the comparison say?</p>
+                {compare(analysis.observed, analysis.generated, total).map((line) => (
+                  <p key={line} className="mt-2 text-sm">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
