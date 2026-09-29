@@ -1,0 +1,52 @@
+{
+ "seed": 20260915,
+ "samples_per_variant": 5,
+ "full_model": {
+  "protocol_score": 0.14736298627312516,
+  "mean_debtrank_gap": 0.1591538209569378,
+  "log_weight_std": 0.7393548918471582
+ },
+ "observed_log_weight_std": 0.8253982846194347,
+ "rows": [
+  {
+   "flag": "bernoulli_edges",
+   "label": "Keep top edges, not sampled",
+   "protocol_score": 0.24874018722088534,
+   "mean_debtrank_gap": 0.2391979540746676,
+   "log_weight_std": 0.6539715255305569,
+   "protocol_delta": 0.10137720094776018
+  },
+  {
+   "flag": "model_equity_ratio",
+   "label": "Model equity, not the ratio",
+   "protocol_score": 0.20691753502555837,
+   "mean_debtrank_gap": 0.30781279417584473,
+   "log_weight_std": 0.736070313292043,
+   "protocol_delta": 0.05955454875243321
+  },
+  {
+   "flag": "kde_latent_sampling",
+   "label": "Sample from the prior",
+   "protocol_score": 0.19657778740306853,
+   "mean_debtrank_gap": 0.24904598633509947,
+   "log_weight_std": 1.2324089846104187,
+   "protocol_delta": 0.049214801129943364
+  },
+  {
+   "flag": "sample_weight_head",
+   "label": "Squared error, not sampled",
+   "protocol_score": 0.166310656669885,
+   "mean_debtrank_gap": 0.2375919530993455,
+   "log_weight_std": 0.3631973922252655,
+   "protocol_delta": 0.018947670396759847
+  },
+  {
+   "flag": "scale_interbank_claims",
+   "label": "No balance-sheet scaling",
+   "protocol_score": 0.14083587568581096,
+   "mean_debtrank_gap": 0.17392470477215358,
+   "log_weight_std": 0.7393548918471582,
+   "protocol_delta": -0.0065271105873142
+  }
+ ]
+}

@@ -1,3 +1,4 @@
+import AblationTable from "@/components/AblationTable";
 import CascadeChart from "@/components/CascadeChart";
 import CrisisSimulator from "@/components/CrisisSimulator";
 import Histogram from "@/components/Histogram";
@@ -5,7 +6,7 @@ import Legend from "@/components/Legend";
 import MetricsTable from "@/components/MetricsTable";
 import ProtocolTable from "@/components/ProtocolTable";
 import TradeoffHero from "@/components/TradeoffHero";
-import { contagion, evaluation, metrics, networks } from "@/lib/data";
+import { ablations, contagion, evaluation, metrics, networks } from "@/lib/data";
 import { methodColours } from "@/lib/methods";
 import { binEdges, countInto } from "@/lib/stats";
 
@@ -276,6 +277,27 @@ export default function Page() {
         <div className="mt-8">
           <MetricsTable rows={metrics.summary.by_method[ours]} />
         </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Which parts of the model earn their place
+        </h2>
+        <p className="mt-5 max-w-[62ch]">
+          Five decisions went into the model, each added because measurement demanded it.
+          Here each one is switched off in turn and the model retrained, to see how much
+          worse it gets without it.
+        </p>
+        <div className="mt-8">
+          <AblationTable ablations={ablations} />
+        </div>
+        <p className="mt-6 max-w-[62ch]">
+          Four of the five earn their place. The last one does not: removing it changes
+          nothing we can distinguish from noise. It was added for a reason that applies to
+          how the ground truth is built rather than how the model decodes, so this test
+          does not really reach it, and we leave the row in rather than quietly dropping a
+          result that did not go our way.
+        </p>
       </section>
 
       <section className="border-t border-rule py-12 lg:py-16">

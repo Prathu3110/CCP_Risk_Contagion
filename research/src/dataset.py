@@ -15,6 +15,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from ablation import resolve
 from generators import Network
 from gvae import GVAE, Batch, LatentSampler
 
@@ -37,7 +38,7 @@ class Scaler:
         return np.exp(standardised * self.feature_std + self.feature_mean)
 
 
-def _log_features(net: Network) -> np.ndarray:
+def _log_features(net: Network, model_ratio: bool = True) -> np.ndarray:
     """Log assets and log equity *ratio*, not log equity.
 
     The node head has a diagonal Gaussian output, so it cannot represent the
@@ -46,13 +47,17 @@ def _log_features(net: Network) -> np.ndarray:
     head actually makes; modelling log equity directly lets big banks come back
     with small-bank capital and quietly changes how fragile the system is.
     """
-    return np.log(np.column_stack([net.assets, net.equity / np.maximum(net.assets, _FLOOR)]) + _FLOOR)
+    second = net.equity / np.maximum(net.assets, _FLOOR) if model_ratio else net.equity
+    return np.log(np.column_stack([net.assets, second]) + _FLOOR)
 
 
-def build_batch(corpus: list[Network]) -> tuple[Batch, Scaler]:
+def build_batch(
+    corpus: list[Network], ablations: dict[str, Any] | None = None
+) -> tuple[Batch, Scaler]:
     """Stack a corpus into dense tensors and fit the log-space scaler."""
+    model_ratio = resolve(ablations)["model_equity_ratio"]
     stacked = np.stack([net.A for net in corpus])
-    features = np.stack([_log_features(net) for net in corpus])
+    features = np.stack([_log_features(net, model_ratio) for net in corpus])
 
     present = stacked > 0
     log_weights = np.log(stacked[present])
@@ -103,8 +108,10 @@ def generate(
     network_cfg: dict[str, Any],
     target_density: float,
     rng: np.random.Generator,
+    ablations: dict[str, Any] | None = None,
 ) -> Network:
     """Decode one fresh banking system from a latent draw."""
+    flags = resolve(ablations)
     model.eval()
     n = int(network_cfg["n_nodes"])
     z_t = torch.tensor(sampler.sample(n, rng), dtype=torch.float32)
@@ -117,6 +124,11 @@ def generate(
     configured = cfg.get("edge_threshold")
     if configured is not None:
         mask = (probabilities > float(configured)) & off_diagonal
+    elif not flags["bernoulli_edges"]:
+        # Ablation: keep the most probable edges instead of drawing them.
+        count = int(round(target_density * n * (n - 1)))
+        cutoff = np.sort(probabilities[off_diagonal])[::-1][max(count - 1, 0)]
+        mask = (probabilities >= cutoff) & off_diagonal
     else:
         # Draw each edge independently, which is the generative model the
         # decoder was actually trained under. Keeping the most probable edges
@@ -129,19 +141,29 @@ def generate(
     # the spread of exposures is what drives contagion, and a mean-only decode
     # would produce a system where every exposure is the same size.
     weight_mu, weight_logvar = (t.numpy() for t in model.edge_weights(z_t))
-    sampled = weight_mu + np.exp(0.5 * weight_logvar) * rng.standard_normal(weight_mu.shape)
+    sampled = (
+        weight_mu + np.exp(0.5 * weight_logvar) * rng.standard_normal(weight_mu.shape)
+        if flags["sample_weight_head"]
+        else weight_mu
+    )
     A = np.where(mask, scaler.to_weights(sampled), 0.0)
 
     node_mu, node_logvar = (t.numpy() for t in model.node_attributes(z_t))
-    attributes = scaler.to_features(
+    node_draw = (
         node_mu + np.exp(0.5 * node_logvar) * rng.standard_normal(node_mu.shape)
+        if flags["sample_weight_head"]
+        else node_mu
     )
-    assets, equity_ratio = attributes[:, 0], attributes[:, 1]
+    attributes = scaler.to_features(node_draw)
+    assets, second = attributes[:, 0], attributes[:, 1]
     total = A.sum()
-    if total > 0:
+    if total > 0 and flags["scale_interbank_claims"]:
         A *= float(network_cfg["interbank_share"]) * assets.sum() / total
     assets = np.maximum(assets, A.sum(axis=0))
-    equity = np.clip(assets * equity_ratio, _FLOOR, assets)
+    # `second` is the equity ratio by default, or equity itself when that
+    # choice is ablated.
+    equity_level = assets * second if flags["model_equity_ratio"] else second
+    equity = np.clip(equity_level, _FLOOR, assets)
 
     # "Core" is a drawing label here, not an input: the largest banks the model
     # chose to build are marked as core so the two pictures read the same way.

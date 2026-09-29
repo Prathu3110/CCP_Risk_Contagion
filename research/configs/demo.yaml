@@ -36,6 +36,16 @@ gvae:
   edge_threshold: null       # null => pick the threshold that matches observed density
   sample_seed: 7
 
+# Modelling choices that can be switched off one at a time, to measure what
+# each is worth. All true reproduces the committed pipeline exactly.
+# See research/src/ablation.py for what each one does.
+ablations:
+  scale_interbank_claims: true
+  sample_weight_head: true
+  model_equity_ratio: true
+  bernoulli_edges: true
+  kde_latent_sampling: true
+
 contagion:
   shock_min: 0.05
   shock_max: 0.50

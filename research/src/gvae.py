@@ -26,6 +26,8 @@ import numpy as np
 import torch
 from torch import Tensor, nn
 
+from ablation import resolve
+
 
 def normalise_adjacency(A: Tensor) -> Tensor:
     """Symmetric normalisation D^-1/2 (A + I) D^-1/2 of a binarised adjacency."""
@@ -119,8 +121,10 @@ def loss_function(
     logvar: Tensor,
     batch: Batch,
     cfg: dict[str, Any],
+    ablations: dict[str, Any] | None = None,
 ) -> tuple[Tensor, dict[str, float]]:
     """Weighted edge BCE + Gaussian NLL on true edge weights and nodes + KL."""
+    flags = resolve(ablations)
     off_diagonal = 1.0 - torch.eye(batch.mask.shape[-1], device=logits.device)
     pos_weight = torch.tensor(float(cfg["pos_weight"]), device=logits.device)
     bce = nn.functional.binary_cross_entropy_with_logits(
@@ -130,15 +134,24 @@ def loss_function(
 
     present = batch.mask > 0
     weight_mu, weight_logvar = weights
-    weight_loss = (
-        nn.functional.gaussian_nll_loss(
-            weight_mu[present], batch.A[present], weight_logvar[present].exp()
-        )
-        if present.any()
-        else torch.zeros((), device=logits.device)
-    )
     node_mu, node_logvar = node_pred
-    node_loss = nn.functional.gaussian_nll_loss(node_mu, batch.X, node_logvar.exp())
+    if flags["sample_weight_head"]:
+        weight_loss = (
+            nn.functional.gaussian_nll_loss(
+                weight_mu[present], batch.A[present], weight_logvar[present].exp()
+            )
+            if present.any()
+            else torch.zeros((), device=logits.device)
+        )
+        node_loss = nn.functional.gaussian_nll_loss(node_mu, batch.X, node_logvar.exp())
+    else:
+        # Squared error learns the conditional mean and nothing about spread.
+        weight_loss = (
+            nn.functional.mse_loss(weight_mu[present], batch.A[present])
+            if present.any()
+            else torch.zeros((), device=logits.device)
+        )
+        node_loss = nn.functional.mse_loss(node_mu, batch.X)
     kl = (-0.5 * (1 + logvar - mu.pow(2) - logvar.exp()).sum(-1)).mean()
 
     total = edge_loss + float(cfg["weight_loss_scale"]) * weight_loss + node_loss + float(cfg["kl_scale"]) * kl
@@ -151,7 +164,12 @@ def loss_function(
     return total, parts
 
 
-def train(model: GVAE, batch: Batch, cfg: dict[str, Any]) -> tuple[list[int], list[float]]:
+def train(
+    model: GVAE,
+    batch: Batch,
+    cfg: dict[str, Any],
+    ablations: dict[str, Any] | None = None,
+) -> tuple[list[int], list[float]]:
     """Full-batch training on CPU. Returns (epochs, losses) for the loss curve."""
     optimiser = torch.optim.Adam(model.parameters(), lr=float(cfg["lr"]))
     epochs: list[int] = []
@@ -159,7 +177,7 @@ def train(model: GVAE, batch: Batch, cfg: dict[str, Any]) -> tuple[list[int], li
     for epoch in range(1, int(cfg["epochs"]) + 1):
         model.train()
         optimiser.zero_grad()
-        total, parts = loss_function(*model(batch.A, batch.X), batch, cfg)
+        total, parts = loss_function(*model(batch.A, batch.X), batch, cfg, ablations)
         total.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
         optimiser.step()
@@ -191,8 +209,13 @@ class LatentSampler:
     latents: np.ndarray  # (n_graphs * n_nodes, latent_dim) encoded means
     covariance: np.ndarray
     bandwidth: float
+    use_kde: bool = True
 
     def sample(self, n: int, rng: np.random.Generator) -> np.ndarray:
+        if not self.use_kde:
+            # The textbook choice, and the ablation: draw from the prior, where
+            # a weakly-regularised decoder was never fitted.
+            return rng.standard_normal((n, self.latents.shape[1]))
         chosen = self.latents[rng.integers(0, len(self.latents), size=n)]
         jitter = rng.multivariate_normal(
             np.zeros(self.latents.shape[1]), self.covariance * self.bandwidth**2, size=n
@@ -201,9 +224,19 @@ class LatentSampler:
 
 
 @torch.no_grad()
-def fit_latent_sampler(model: GVAE, batch: Batch, bandwidth: float) -> LatentSampler:
+def fit_latent_sampler(
+    model: GVAE,
+    batch: Batch,
+    bandwidth: float,
+    ablations: dict[str, Any] | None = None,
+) -> LatentSampler:
     """Collect every encoded node latent and wrap it in a kernel density."""
     model.eval()
     mu, _ = model.encode(batch.A, batch.X)
     flat = mu.reshape(-1, mu.shape[-1]).cpu().numpy()
-    return LatentSampler(latents=flat, covariance=np.cov(flat, rowvar=False), bandwidth=bandwidth)
+    return LatentSampler(
+        latents=flat,
+        covariance=np.cov(flat, rowvar=False),
+        bandwidth=bandwidth,
+        use_kde=resolve(ablations)["kde_latent_sampling"],
+    )

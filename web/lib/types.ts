@@ -120,3 +120,25 @@ export interface Evaluation {
   samples: number;
   methods: Record<MethodKey, MethodEvaluation>;
 }
+
+export interface AblationRow {
+  flag: string;
+  label: string;
+  protocol_score: number;
+  mean_debtrank_gap: number;
+  log_weight_std: number;
+  /** Change against the full model. Positive means the choice was earning its place. */
+  protocol_delta: number;
+}
+
+export interface Ablations {
+  seed: number;
+  samples_per_variant: number;
+  full_model: {
+    protocol_score: number;
+    mean_debtrank_gap: number;
+    log_weight_std: number;
+  };
+  observed_log_weight_std: number;
+  rows: AblationRow[];
+}
