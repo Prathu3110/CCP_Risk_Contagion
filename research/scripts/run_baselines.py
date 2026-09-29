@@ -227,8 +227,12 @@ def write_web_evaluation(ensemble: dict[str, Any]) -> None:
                 "n_samples": entry["n_samples"],
                 "edge_recall": entry["edge_recall"],
                 "edge_f1": entry["edge_f1"],
+                "frobenius_relative": entry["frobenius_relative"],
                 "protocol_score": entry["protocol_score"],
                 "structure_score": entry["structure_score"],
+                # Every individual metric, so the page can show the full table
+                # rather than only the two headline scores.
+                "gaps": entry["gaps"],
                 "ks_debtrank": {
                     "median_p": entry["ks_debtrank"]["median_p"],
                     "share_not_rejected_at_005": entry["ks_debtrank"][

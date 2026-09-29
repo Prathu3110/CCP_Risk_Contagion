@@ -99,6 +99,16 @@ export interface Interval {
   hi: number;
 }
 
+/** The seven metrics scored per method. Three contagion, four structural. */
+export type GapMetric =
+  | "mean_debtrank"
+  | "max_debtrank"
+  | "mean_cascade_size"
+  | "edge_density"
+  | "degree_assortativity"
+  | "mean_exposure"
+  | "mean_equity_ratio";
+
 export interface MethodEvaluation {
   label: string;
   /** What this method is shown about the network it must reproduce. */
@@ -106,8 +116,11 @@ export interface MethodEvaluation {
   n_samples: number;
   edge_recall: Interval;
   edge_f1: Interval;
+  frobenius_relative: Interval;
   protocol_score: Interval;
   structure_score: Interval;
+  /** Relative gap against the simulated ground truth, per metric. */
+  gaps: Record<GapMetric, Interval>;
   ks_debtrank: {
     /** HIGH is the desired outcome: the two cannot be told apart. */
     median_p: number;

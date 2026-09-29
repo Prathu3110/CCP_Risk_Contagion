@@ -1,5 +1,6 @@
 import AblationTable from "@/components/AblationTable";
 import CascadeChart from "@/components/CascadeChart";
+import FullMetricsTable from "@/components/FullMetricsTable";
 import CrisisSimulator from "@/components/CrisisSimulator";
 import Histogram from "@/components/Histogram";
 import Legend from "@/components/Legend";
@@ -87,6 +88,52 @@ export default function Page() {
 
       <section className="border-t border-rule py-12 lg:py-16">
         <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          The whole thing, without the jargon
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            Banks lend to each other constantly, in enormous amounts and overnight. That
+            makes a web. If one bank cannot pay, the banks expecting that money have a
+            hole, and if the hole is big enough they cannot pay either.
+          </p>
+          <p>
+            Anyone who wants to know how bad a banking crisis could get needs a map of
+            that web. Regulators have one. Nobody else is allowed to see it, and for good
+            reason: it is a list of exactly where the system is weak.
+          </p>
+          <p>
+            So researchers build fake maps. The question this page is about is how you
+            check whether a fake map is any good.
+          </p>
+          <p>
+            The obvious check is to compare it against a real map and count how many
+            connections it got right. Think of it as a street map: count how many of the
+            real streets appear. That is what the field does.
+          </p>
+          <p>
+            We think that check is close to useless, and there is a simple way to see why.
+            One popular method connects nearly every bank to nearly every other, a little
+            bit. That map contains every real connection, so it scores almost perfectly on
+            the count. But a map where every street exists tells you nothing about which
+            routes traffic actually takes. Push a crisis through it and the crisis has
+            nowhere to concentrate, so it behaves nothing like the real thing.
+          </p>
+          <p>
+            Our proposal is to stop counting connections and start running crises. Take
+            the real system and the fake one, hit both with the same disaster, and see
+            whether the same sort of damage happens. That is a harder test, and a more
+            useful one, because spreading crises is the only reason anyone wanted the map.
+          </p>
+          <p>
+            Everything below is that argument with the numbers attached. There is also a
+            crisis further down you can run yourself, one shock at a time, and watch banks
+            fail in order.
+          </p>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
           The clearest case
         </h2>
         <div className="mt-5 max-w-[62ch] space-y-4">
@@ -125,6 +172,34 @@ export default function Page() {
         </p>
         <div className="mt-8">
           <ProtocolTable evaluation={evaluation} colours={colours} order={order} />
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          Every measure, every method
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            The table above gives two summary scores. Those scores are averages of the
+            measures below, and averages hide things, so here is everything that goes into
+            them.
+          </p>
+          <p>
+            Ten measures in three groups. The first group is the conventional test: does
+            the method reproduce the real network&rsquo;s links and amounts. The second is
+            the test we argue should replace it: does a crisis behave the same way. The
+            third describes the shape of the network, which is not the claim but explains
+            most of the second group&rsquo;s results.
+          </p>
+          <p>
+            Read one row at a time and the argument appears without any interpretation
+            from us. The evenly spread method wins the first group outright and loses the
+            third by an order of magnitude.
+          </p>
+        </div>
+        <div className="mt-8">
+          <FullMetricsTable evaluation={evaluation} colours={colours} order={order} />
         </div>
       </section>
 
@@ -435,6 +510,41 @@ export default function Page() {
               agree while the systems underneath behave quite differently.
             </figcaption>
           </figure>
+        </div>
+      </section>
+
+      <section className="border-t border-rule py-12 lg:py-16">
+        <h2 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl">
+          What the simulation below is doing, in plain terms
+        </h2>
+        <div className="mt-5 max-w-[62ch] space-y-4">
+          <p>
+            Give every bank a pile of things it owns and a list of people it owes. The
+            slider destroys part of what every bank owns. That is the disaster: a property
+            crash, a recession, a government defaulting.
+          </p>
+          <p>
+            Then ask each bank one question in turn. After that loss, and after collecting
+            whatever your debtors actually manage to pay you, can you still pay everyone
+            you owe? If yes, nothing happens to you. If no, you turn red.
+          </p>
+          <p>
+            The catch is that the answer depends on everyone else&rsquo;s answer. You
+            cannot know what you will collect until you know who is paying. So the question
+            is asked again, and again, until the answers stop changing. Each pass is one of
+            the rounds you will see counted.
+          </p>
+          <p>
+            That is the entire calculation. It is not a guess or a rule of thumb: it is the
+            unique settlement where everybody pays exactly what they can and no more, and
+            it has been the standard way of working this out since 2001.
+          </p>
+          <p>
+            Two things make it worth watching rather than just reading. First, round one is
+            the disaster and every round after it is the web, so you can see the difference
+            directly. Second, the same disaster is applied to both systems at once, so any
+            difference you see is the map, not the shock.
+          </p>
         </div>
       </section>
 
