@@ -2,16 +2,15 @@
 
     python3 research/scripts/make_ensemble_figure.py
 
-The true system is drawn in ink blue as the reference the others are judged
-against; our model is amber; the baselines are the grey ramp from
-docs/WEB-PLAN.md section 1, ordered by how much each is told about the network
-it must reproduce.
+Single-column width. The vertical axis is fixed to 0-1 here and in the
+six-panel figure, so the two can be compared directly.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -20,17 +19,9 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 
-INK = "#10192b"
-PAPER = "#f5f6f4"
-RULE = "#d6d8d3"
-OBSERVED = "#2e5e8c"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-STYLE = {
-    "vae": ("#c8842a", "o", "-"),
-    "max_entropy": ("#4a4f58", "s", "--"),
-    "configuration": ("#7c828c", "^", "-."),
-    "erdos_renyi": ("#9ba1aa", "D", ":"),
-}
+import figstyle  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / "research" / "results"
@@ -41,47 +32,48 @@ def main() -> None:
     parser.add_argument("--out", type=Path, default=RESULTS / "figure_ensemble.pdf")
     args = parser.parse_args()
 
+    figstyle.apply()
     data = json.loads((RESULTS / "ensemble.json").read_text())
     shocks = data["shock"]
 
-    fig, ax = plt.subplots(figsize=(7.4, 4.8))
-    fig.patch.set_facecolor(PAPER)
-    ax.set_facecolor(PAPER)
+    fig, ax = plt.subplots(figsize=(figstyle.SINGLE_COLUMN, figstyle.SINGLE_COLUMN * 0.78))
 
-    ax.plot(shocks, data["observed_cascade"], color=OBSERVED, linewidth=2.4,
-            marker="o", markersize=4, label="Simulated ground truth", zorder=4)
+    truth = figstyle.SERIES["observed"]
+    ax.plot(shocks, data["observed_cascade"], color=truth["colour"], linewidth=1.5,
+            linestyle=truth["dash"], marker=truth["marker"], label="Simulated ground truth",
+            zorder=4)
 
     for key, entry in data["methods"].items():
-        colour, marker, dash = STYLE[key]
+        style = figstyle.SERIES[key]
         curve = entry["cascade_curve"]
-        ax.fill_between(shocks, curve["lo"], curve["hi"], color=colour, alpha=0.16, linewidth=0)
-        ax.plot(shocks, curve["mean"], color=colour, linewidth=1.8, linestyle=dash,
-                marker=marker, markersize=3.6, label=entry["label"])
+        ax.fill_between(shocks, curve["lo"], curve["hi"], color=style["colour"],
+                        alpha=0.16, linewidth=0)
+        ax.plot(shocks, curve["mean"], color=style["colour"], linewidth=1.1,
+                linestyle=style["dash"], marker=style["marker"], label=entry["label"])
 
-    ax.set_xlabel("Share of outside assets destroyed", fontsize=9, color=INK)
-    ax.set_ylabel("Share of banks that default", fontsize=9, color=INK)
+    ax.set_xlabel("Outside assets destroyed")
+    ax.set_ylabel("Banks that default")
+    # Fixed across every figure showing this quantity.
     ax.set_ylim(0, 1)
-    ax.tick_params(colors=INK, labelsize=8)
-    for side, spine in ax.spines.items():
-        spine.set_visible(side in ("bottom", "left"))
-        spine.set_color(RULE)
-    ax.grid(color=RULE, linewidth=0.6, alpha=0.7)
-    ax.set_axisbelow(True)
-    ax.legend(frameon=False, fontsize=8, labelcolor=INK, loc="lower right")
+    ax.set_xlim(min(shocks), max(shocks))
+    figstyle.frame(ax, gridlines=True)
+    # The five curves converge, so direct labels at the line ends would overlap.
+    # A compact legend is the honest choice here.
+    ax.legend(frameon=False, loc="lower right", handlelength=2.6, borderpad=0.2,
+              labelspacing=0.25)
 
-    fig.tight_layout(pad=1.6)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(args.out, facecolor=PAPER)
-    fig.savefig(args.out.with_suffix(".png"), dpi=200, facecolor=PAPER)
-    args.out.with_suffix(".txt").write_text(
+    fig.tight_layout(pad=0.5)
+    caption = (
         f"Share of banks defaulting as the shock grows, for the simulated ground truth "
         f"and each method. Seed {data['seed']}, {data['n_nodes']} banks, "
-        f"{data['samples_requested']} samples per stochastic method (maximum entropy is "
-        "deterministic and has no band). Shaded bands are 95% bootstrap intervals across "
-        "samples. Every method is scored against the same sequence of random shock "
-        "spreads.\n"
+        f"{data['samples_requested']} samples per stochastic method; maximum entropy is "
+        "deterministic and has no band. Shaded bands are 95% bootstrap intervals across "
+        "samples. Every method meets the same sequence of random shock spreads. All "
+        "methods track the truth closely on this measure: cascade size is not what "
+        "separates them."
     )
-    print(f"Wrote {args.out} and .png, .txt")
+    for path in figstyle.save(fig, args.out, caption):
+        print(f"Wrote {path}")
 
 
 if __name__ == "__main__":
